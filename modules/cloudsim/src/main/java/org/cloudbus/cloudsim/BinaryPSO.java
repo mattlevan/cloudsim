@@ -49,7 +49,7 @@ public class BinaryPSO {
     public BinaryPSO(List<Cloudlet> cloudletList) {
         this.coudletList = cloudletList;
         initSwarm(100); // Initialize swarm with 100 particles.
-        g = 0.0; // Initialize global best.
+        g = Double.POSITIVE_INFINITY; // Initialize global best.
         c1, c2 = 1.49445; // Initialize cognitive and social constants.
         w = 2.0; // Set the inertial weight.
     }
@@ -74,8 +74,15 @@ public class BinaryPSO {
         this.swarm = new List<Particle>;
 
         for (int i = 0; i < n; i++) {
-            Particle p = new Particle();
+            Particle p = new Particle(cloudletList);
             swarm.add(p);
+        }
+    }
+
+    /** Evaluate a given solution. */
+    protected void evaluateSolution(double solution) {
+        if (solution < g) {
+            g = solution;
         }
     }
 }
@@ -85,6 +92,9 @@ public class BinaryPSO {
  * Particle class implements the particle for building a swarm.
  */
 class Particle {
+    /* List of cloudlets. */
+    List<Cloudlet> cloudletList;
+
     /* Velocity. */
     public double v;
 
@@ -95,7 +105,8 @@ class Particle {
     public double pCurrent;
 
     /* Constructor. */
-    public Particle() {
+    public Particle(List<Cloudlet> cloudletList) {
+        this.cloudletList = cloudletList;
         this.v = 0.0;
         this.pCurrent = 0.0;
         this.pBest = 0.0;
@@ -103,7 +114,7 @@ class Particle {
 
     /** Calculate velocity. */
     public void calcVelocity(double w, double c1, double c2, 
-                                double r1, double r2, double g) {
+                             double r1, double r2, double g) {
         v = w*v+c1*r1*(pBest-pCurrent)+c2*r2*(g-pCurrent);
     }
 
