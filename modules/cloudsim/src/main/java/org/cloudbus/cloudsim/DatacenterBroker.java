@@ -347,6 +347,7 @@ public class DatacenterBroker extends SimEntity {
 	 * @post $none
          * @see #submitCloudletList(java.util.List) 
 	 */
+    /*
 	protected void submitCloudlets() {
 		int vmIndex = 0;
 		List<Cloudlet> successfullySubmitted = new ArrayList<Cloudlet>();
@@ -375,6 +376,54 @@ public class DatacenterBroker extends SimEntity {
 			sendNow(getVmsToDatacentersMap().get(vm.getId()), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
 			cloudletsSubmitted++;
 			vmIndex = (vmIndex + 1) % getVmsCreatedList().size();
+			getCloudletSubmittedList().add(cloudlet);
+			successfullySubmitted.add(cloudlet);
+		}
+
+		// remove submitted cloudlets from waiting list
+		getCloudletList().removeAll(successfullySubmitted);
+	}
+    */
+
+	/**
+	 * Submit cloudlets to the created VMs.
+	 * 
+	 * @pre $none
+	 * @post $none
+         * @see #submitCloudletList(java.util.List) 
+	 */
+	protected void submitCloudlets() {
+        BinaryPSO pso = new BinaryPSO(getVmsCreatedList(), getCloudletList());
+        List<Integer> vmIds = pso.run();
+
+		int vmIndex = vmIds.remove(0); // Get the first vmId in the vmIds list.
+		List<Cloudlet> successfullySubmitted = new ArrayList<Cloudlet>();
+		for (Cloudlet cloudlet : getCloudletList()) {
+			Vm vm;
+			// if user didn't bind this cloudlet and it has not been executed yet
+			if (cloudlet.getVmId() == -1) {
+				vm = getVmsCreatedList().get(vmIndex);
+			} else { // submit to the specific vm
+				vm = VmList.getById(getVmsCreatedList(), cloudlet.getVmId());
+				if (vm == null) { // vm was not created
+					if(!Log.isDisabled()) {				    
+					    Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Postponing execution of cloudlet ",
+							cloudlet.getCloudletId(), ": bount VM not available");
+					}
+					continue;
+				}
+			}
+
+			if (!Log.isDisabled()) {
+			    Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Sending cloudlet ",
+					cloudlet.getCloudletId(), " to VM #", vm.getId());
+			}
+			
+			cloudlet.setVmId(vm.getId());
+			sendNow(getVmsToDatacentersMap().get(vm.getId()), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
+			cloudletsSubmitted++;
+			// vmIndex = (vmIndex + 1) % getVmsCreatedList().size();
+            vmIndex = vmIds.remove(0);
 			getCloudletSubmittedList().add(cloudlet);
 			successfullySubmitted.add(cloudlet);
 		}

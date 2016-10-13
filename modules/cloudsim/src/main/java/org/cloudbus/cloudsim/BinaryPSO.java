@@ -16,6 +16,9 @@ package org.cloudbus.cloudsim;
  * @since CloudSim Toolkit 2.0
  */
 public class BinaryPSO {
+    /* List of Vms for submission to cloud resources. */
+    List<Vm> vmList;
+    
     /* List of cloudlets for submission to cloud resources. */
     List<Cloudlet> cloudletList;
 
@@ -35,23 +38,32 @@ public class BinaryPSO {
     /* Social constant. */
     double c2;
 
+    /* Uniform random number. */
+    double r;
+
     /* Random number one. */
     double r1;
 
     /* Random number two. */
     double r2;
 
+    /* Random Object. */
+    Random random;
+
 
     /*
-     * Constructor accepts a list of cloudlets.
+     * Constructor accepts a list of Vms and cloudlets.
      *
      */
-    public BinaryPSO(List<Cloudlet> cloudletList) {
+    public BinaryPSO(List<Vm> vmList, List<Cloudlet> cloudletList) {
+        this.vmList = vmList;
         this.coudletList = cloudletList;
         initSwarm(100); // Initialize swarm with 100 particles.
         g = Double.POSITIVE_INFINITY; // Initialize global best.
         c1, c2 = 1.49445; // Initialize cognitive and social constants.
         w = 2.0; // Set the inertial weight.
+        random = new Random();
+        r = random.nextDouble(); // Initialize random number.
     }
 
 
@@ -84,6 +96,15 @@ public class BinaryPSO {
         if (solution < g) {
             g = solution;
         }
+    }
+
+    /** Run the particle swarm optimization algorithm. 
+     *  
+     *  @pre $none
+     *  @post $none
+     *  @return vmIds List of Vm ids to match cloudlets with. */
+    protected List<Integer> run {
+        
     }
 }
 
@@ -126,5 +147,10 @@ class Particle {
     /** Sigmoid function. */
     public double s(double pCurrent) {
         return 1/(1+Math.exp(-1*pCurrent));
+    }
+
+    /** Calculate position. */
+    public double calcPosition(double s) {
+        if (s < 
     }
 }
