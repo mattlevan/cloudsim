@@ -21,6 +21,9 @@ public class BinaryPSO {
     /* List of cloudlets for submission to cloud resources. */
     List<Cloudlet> cloudletList;
 
+    /* Power set of list of cloudlets. */
+    List<List<Cloudlet>> ps;
+
     /* Particle swarm for evaluating resources and finding a Vm 
      * solution for each cloudlet. */
     List<Particle> swarm;
@@ -79,6 +82,7 @@ public class BinaryPSO {
         this.numIterations = numIterations;
         this.numParticles = numParticles;
         this.inertiaTechnique = inertiaTechnique;
+        this.ps = powerSet(cloudletList);
         initSwarm(numParticles); // Initialize swarm with 100 particles.
         g = Double.POSITIVE_INFINITY; // Initialize global best.
         c1 = 1.49445; // Initialize cognitive constant.
@@ -118,17 +122,40 @@ public class BinaryPSO {
     }
 
     /**
+     * Fitness for a single PSO particle. 
+     *
      * The fitness function calculates the execution times of all possible 
      * cloudlet combinations on every cloud resource and then returns the 
      * highest execution time as the fitness value of the particle, where 
      * exc(Vm vm, List<Cloudlet> cloudletList) is the execution time of 
      * running the cloudletList on vm.
-     *
-     * @pre $none
-     * @post $none
      */
-    protected double calculateFitnessValue(Vm vm, List<Cloudlet> cloudletList) {
-         
+    protected double calculateFitnessValue() {
+        List<Double> executionTimes = new ArrayList<Double>();
+        
+        for (List<Cloudlet> subset : ps) {
+            for (Vm vm : vmList) {
+                executionTimes.add(calcExecutionTime(vm, subset));
+            }
+        }
+
+        return Collections.max(executionTimes);
+    }
+
+    /**
+     * Calculate execution time of the power set of cloudlets on a single Vm.
+     *
+     * @param vm Vm to calculate execution time on.
+     * @return Execution time of all cloudlets on vm.
+     */
+    private double calcExecutionTime(Vm vm, List<Cloudlet> subset) {
+        double total = 0.0;
+
+        for (Cloudlet cloudlet : subset) {
+            total += cloudlet.getCloudletLength() / vm.getMips();
+        }
+        
+        return total;
     }
 
     /** Initialize the swarm with n particles. */
@@ -136,7 +163,7 @@ public class BinaryPSO {
         swarm = new List<Particle>();
 
         for (int i = 0; i < n; i++) {
-            Particle p = new Particle(cloudletList);
+            Particle p = new Particle(cloudletList, vmList.length);
             swarm.add(p);
         }
     }
@@ -181,19 +208,32 @@ public class BinaryPSO {
 
 /**
  * Particle class implements the particle for building a swarm.
+ *
+ * @todo: How exactly is the fitness calculated? Does each particle calculate 
+ * execution times of the entire power set of cloudlets on only a single Vm or 
+ * on every Vm? 
+ *
+ * @todo: Also, does each particle only calculate execution times of a 
+ * partition of the power set of cloudlets?
+ *
+ * @todo: How does the particle express the personal current and best 
+ * solutions (in terms of pairings)?
  */
 class Particle {
     /* List of cloudlets. */
     List<Cloudlet> cloudletList;
 
-    /* Velocity. */
-    public double v;
+    /* D-dimensional space for positions. */
+    public double[] p;
+
+    /* D-dimensional space for velocities. */
+    public double[] v;
 
     /* Personal best solution. */
-    public double pBest;
+    public double best;
 
     /* Personal current solution. */
-    public double pCurrent;
+    public double current;
 
     /* Random number one. */
     double r1;
@@ -204,43 +244,79 @@ class Particle {
     /* Random Object. */
     Random random;
 
-    /* Constructor. */
-    public Particle(List<Cloudlet> cloudletList) {
+    /**
+     * Particle constructor. 
+     *
+     * @param cloudletList List of cloudlets to be considered.
+     * @param n Number of Vms available for scheduling.
+     */
+    public Particle(List<Cloudlet> cloudletList, int n) {
         cloudletList = cloudletList;
-        v = 0.0;
-        pCurrent = 0.0;
-        pBest = 0.0;
+        p = new double[n];
+        v = new double[n];
+        current = 0.0;
+        best = 0.0;
         random = new Random();
+
+        for (int i = 0; i < n; i++) {
+            p[i] = 0;
+            v[i] = 0;
+        }
     }
 
     /** Calculate velocity. */
     public void calcVelocity(double w, double c1, double c2, double g) {
-        r1 = random.nextDouble();
-        r2 = random.nextDouble();
-        v = w*v+c1*r1*(pBest-pCurrent)+c2*r2*(g-pCurrent);
+        for (int i = 0; i < v.length; i++) {
+            r1 = random.nextDouble();
+            r2 = random.nextDouble();
+            v[i] = w*v[i]+c1*r1*(best-current)+c2*r2*(g-current);
+        }
     }
 
     /** Calculate personal current solution. */
-    public void calcpCurrent() {
-        pCurrent = pCurrent+v;
+    public void calcCurrent() {
+        p[current] = current+v;
     }
 
     /** Sigmoid function. */
-    public double s(double pCurrent) {
-        return 1/(1+Math.exp(-1*pCurrent));
+    public double s(double current) {
+        return 1/(1+Math.exp(-1*current));
     }
 
     /** Calculate position. */
     public double calcPosition() {
-        if (s(pCurrent) <= r)
-            pCurrent = 0;
+        if (s(p[current]) <= r)
+            p[current] = 0;
         else
-            pCurrent = 1;
+            p[current]  = 1;
     }
 
     /** 
-     * Generate power set of cloudletList. 
+     * Generate power set. 
      *
-     * @todo: Write this code.
+     * @param list Collection<T>.
+     * @return Power set of the list.
      */
+	public static <T> List<List<T>> powerSet(Collection<T> list) {
+	    List<List<T>> ps = new ArrayList<List<T>>();
+	    ps.add(new ArrayList<T>());   // Add the empty set.
+	 
+	    // For every item in the original list...
+	    for (T item : list) {
+	        List<List<T>> newPs = new ArrayList<List<T>>();
+	 
+	        for (List<T> subset : ps) {
+	            // Copy all of the current powerset's subsets.
+	            newPs.add(subset);
+	 
+	            // Plus the subsets appended with the current item.
+	            List<T> newSubset = new ArrayList<T>(subset);
+	            newSubset.add(item);
+	            newPs.add(newSubset);
+	        }
+	 
+	        ps = newPs;
+	    }
+	    return ps;
+	}
 }
