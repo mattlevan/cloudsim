@@ -214,35 +214,56 @@ public class BinaryPSO {
     /**
      * Generates the search space by calculating all possible solutions as 
      * a function of the cloudletList and vmList.
-     * 
-     * @param list List of remaining cloudlets.
-     * @param solutions List of solutions.
-     * @param iteration Iteration counter.
-     * @return A list of solutions which are themselves lists of lists.
-     * @TODO: Extract actual integer IDs from cloudlets.
      */
-    protected void calcSolutions(ArrayList<Integer> listOfWhatsLeft, 
+    protected void genSearchSpace() {
+        /* Generate a list of cloudletId integers to pass to calcSolutions. */
+        ArrayList<Integer> cloudletIds = new ArrayList<Integer>();
+        for (Cloudlet cloudlet : cloudletList) {
+            cloudletIds.add(cloudlet.getCloudletId());
+        }
+
+        /* Instantiate a new list that stores calculations for the 
+         * recursive calcSolutions() to use. */ 
+        ArrayList<ArrayList<Integer>> pastCalculations = 
+            new ArrayList<ArrayList<Integer>>();
+
+        /* Run the recursive helper function. */
+        calcSolutions(cloudletIds, pastCalculations, iteration);
+    }
+
+    /**
+     * Calculates all possible solutions as a function of the cloudletList and 
+     * vmList (helper function for genSearchSpace())).
+     * 
+     * @param remainingList List of remaining cloudlets.
+     * @param pastCalculations List of previously calculated solutions.
+     * @param iteration Iteration counter.
+     */
+    protected void calcSolutions(ArrayList<Integer> remainingList, 
             ArrayList<ArrayList<Integer>> pastCalculations, int iteration) {
-        List<List<Integer>> ps = powerset(listOfWhatsLeft);
+        List<List<Integer>> ps = powerset(remainingList);
 
         if (iteration >= cloudletList.length-2) {
             for (List<Integer> x : ps) {
                 ArrayList<ArrayList<Integer>> t = 
                     (ArrayList<ArrayList<Integer>>) pastCalculations.clone();
                 ArrayList<Integer> remaining = new 
-                    ArrayList<Integer>(listOfWhatsLeft);
+                    ArrayList<Integer>(remainingList);
                 remaining.removeall(x);
                 t.add((ArrayList<Integer>) x);
                 t.add(remaining);
                 solutions.add(t);
             }
+
+            /* Reset the iteration counter. */
+            iteration = 0;
         }
         else {
             for (List<Integer> x : ps) {
                 ArrayList<ArrayList<Integer>> t = 
                     (ArrayList<ArrayList<Integer>>) pastCalculations.clone();
                 ArrayList<Integer> remaining = new 
-                    ArraList<Integer>(listOfWhatsLeft);
+                    ArraList<Integer>(remainingList);
                 t.add((ArrayList<Integer>) x);
                 remaining.removeAll(x);
                 calcSolutions((ArrayList<Integer>) remaining, t, iteration+1);
