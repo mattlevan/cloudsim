@@ -8,6 +8,8 @@
 
 package org.cloudbus.cloudsim;
 
+import java.util.*;
+
 /**
  * BinaryPSO implements the popular population-based metaheuristic algorithm 
  * for scheduling cloudlets on VMs.
@@ -32,34 +34,34 @@ public class BinaryPSO {
     List<ArrayList<ArrayList<Integer>>> solutions;
 
     /* Global best solution. */
-    double g;
+    ArrayList<double[]> g;
 
     /* Inertial constant. */
     double w;
 
     /* Cognitive constant. */
-    double c1;
+    final double c1;
 
     /* Social constant. */
-    double c2;
+    final double c2;
 
     /* Uniform random number. */
-    double r;
+    final double r;
 
     /* Random Object. */
     Random random;
 
     /* Number of iterations. */
-    int numIterations;
+    final int numIterations;
 
     /* Number of particles. */
-    int numParticles;
+    final int numParticles;
 
     /* Inertia calculation technique choice. */
-    int inertiaTechnique;
+    final int inertiaTechnique;
 
     /* Fixed inertia weight. */
-    int fixedIntertiaWeight = 0.5;
+    final double fixedIntertiaWeight = 0.5;
 
     /* Solution counter for use in the calcSolutions method. */
     int iteration = 0;
@@ -90,7 +92,7 @@ public class BinaryPSO {
         this.inertiaTechnique = inertiaTechnique;
         this.ps = powerSet(cloudletList);
         this.solutions = new ArrayList<ArrayList<ArrayList<Integer>>>();
-        initSwarm(numParticles); // Initialize swarm with 100 particles.
+        initSwarm(); // Initialize swarm with 100 particles.
         g = Double.POSITIVE_INFINITY; // Initialize global best.
         c1 = 1.49445; // Initialize cognitive constant.
         c2 = 1.49445; // Initialize social constants.
@@ -159,19 +161,26 @@ public class BinaryPSO {
         double total = 0.0;
 
         for (Cloudlet cloudlet : subset) {
-            total += cloudlet.getCloudletLength() / vm.getMips();
+            total += cloudlet.getCloudletLength() / 
+                vm.getHost().getTotalAllocatedMipsForVm(vm);
         }
         
         return total;
     }
 
-    /** Initialize the swarm with n particles. */
-    protected void initSwarm(int n) {
-        swarm = new List<Particle>();
+    /** 
+     * Initialize the swarm with numParticles particles. 
+     * 
+     * @TODO: Write code to initialize first position, velocity matrices,
+     * and fitness and use those values to instantiate all particles in 
+     * the swarm.
+     */
+    protected void initSwarm() {
+        swarm = new ArrayList<Particle>();
 
-        for (int i = 0; i < n; i++) {
-            Particle p = new Particle(cloudletList, vmList.length, r);
-            swarm.add(p);
+        for (int i = 0; i < numParticles; i++) {
+            swarm.add(new Particle(position, fitness, velocity, 
+                    bestPosition, bestFitness));
         }
     }
 
@@ -241,9 +250,9 @@ public class BinaryPSO {
      */
     protected void calcSolutions(ArrayList<Integer> remainingList, 
             ArrayList<ArrayList<Integer>> pastCalculations, int iteration) {
-        List<List<Integer>> ps = powerset(remainingList);
+        List<List<Integer>> ps = powerSet(remainingList);
 
-        if (iteration >= cloudletList.length-2) {
+        if (iteration >= cloudletList.size()-2) {
             for (List<Integer> x : ps) {
                 ArrayList<ArrayList<Integer>> t = 
                     (ArrayList<ArrayList<Integer>>) pastCalculations.clone();
@@ -299,96 +308,4 @@ public class BinaryPSO {
 	    }
 	    return ps;
 	}
-}
-
-
-/**
- * Particle class implements the particle for building a swarm.
- *
- * @todo: How exactly is the fitness calculated? Does each particle calculate 
- * execution times of the entire power set of cloudlets on only a single Vm or 
- * on every Vm? 
- *
- * @todo: Also, does each particle only calculate execution times of a 
- * partition of the power set of cloudlets?
- *
- * @todo: How does the particle express the personal current and best 
- * solutions (in terms of pairings)?
- */
-class Particle {
-    /* List of cloudlets. */
-    List<Cloudlet> cloudletList;
-
-    /* D-dimensional space for positions. */
-    public double[] p;
-
-    /* D-dimensional space for velocities. */
-    public double[] v;
-
-    /* Personal best solution. */
-    public double best;
-
-    /* Personal current position. */
-    public double current;
-
-    /* Uniform random number from swarm. */
-    double r;
-
-    /* Random number one. */
-    double r1;
-
-    /* Random number two. */
-    double r2;
-
-    /* Random Object. */
-    Random random;
-
-    /**
-     * Particle constructor. 
-     *
-     * @param cloudletList List of cloudlets to be considered.
-     * @param n Number of Vms available for scheduling.
-     */
-    public Particle(List<Cloudlet> cloudletList, int n, int r) {
-        cloudletList = cloudletList;
-        p = new double[n];
-        v = new double[n];
-        this.r = r;
-        current = 0.0;
-        best = 0.0;
-        random = new Random();
-
-        for (int i = 0; i < n; i++) {
-            p[i] = 0;
-            v[i] = 0;
-        }
-    }
-
-    /** Calculate new velocities. */
-    public void calcNewVelocities(double w, double c1, double c2, double g) {
-        for (int i = 0; i < v.length; i++) {
-            r1 = random.nextDouble();
-            r2 = random.nextDouble();
-            v[i] = w*v[i]+c1*r1*(best-current)+c2*r2*(g-current);
-        }
-    }
-
-    /** Calculate personal current solution. */
-    public void calcCurrent() {
-        p[current] = current+v;
-    }
-
-    /** Sigmoid function. */
-    public double s(double current) {
-        return 1/(1+Math.exp(-1*current));
-    }
-
-    /** Calculate position. */
-    public double calcPosition() {
-        if (s(p[current]) <= r)
-            p[current] = 0;
-        else
-            p[current]  = 1;
-    }
-
 }
