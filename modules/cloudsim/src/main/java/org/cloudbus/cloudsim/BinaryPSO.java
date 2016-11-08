@@ -34,7 +34,16 @@ public class BinaryPSO {
     List<ArrayList<ArrayList<Integer>>> solutions;
 
     /* Global best solution. */
-    ArrayList<double[]> g;
+    ArrayList<double[]> globalBest;
+
+    /* Global best fitness. */
+    double globalBestFitness;
+
+    /* Number of Vms. */
+    int n;
+
+    /* Number of cloudlets. */
+    int m;
 
     /* Inertial constant. */
     double w;
@@ -92,8 +101,11 @@ public class BinaryPSO {
         this.inertiaTechnique = inertiaTechnique;
         this.ps = powerSet(cloudletList);
         this.solutions = new ArrayList<ArrayList<ArrayList<Integer>>>();
+        this.n = vmList.size();
+        this.m = cloudletList.size();
+        this.globalBestFitness = Double.MAX_VALUE; // Small values are better.
+        this.globalBest = new ArrayList<int[]>();
         initSwarm(); // Initialize swarm with 100 particles.
-        g = Double.POSITIVE_INFINITY; // Initialize global best.
         c1 = 1.49445; // Initialize cognitive constant.
         c2 = 1.49445; // Initialize social constants.
         w = 2.0; // Set the inertial weight.
@@ -138,17 +150,35 @@ public class BinaryPSO {
      * highest execution time as the fitness value of the particle, where 
      * exc(Vm vm, List<Cloudlet> cloudletList) is the execution time of 
      * running the cloudletList on vm.
+     *
+     * @param runTime The runtime matrix.
+     * @param positions The positions matrix.
+     *
+     * @return The double fitness value.
      */
-    protected double calculateFitnessValue() {
-        List<Double> executionTimes = new ArrayList<Double>();
+    protected double calcFitness(ArrayList<double[]> runTime, 
+            ArrayList<int[]> positions) {
+        double[] sum = new double[n];
         
-        for (List<Cloudlet> subset : ps) {
-            for (Vm vm : vmList) {
-                executionTimes.add(calcExecutionTime(vm, subset));
+        for (int i = 0; i < n; i++) {
+            double[] time = runTime.get(i);
+            int[] pos = positions.get(i);
+
+            for (int j = 0; j < pos.length; j++) {
+                if (pos[j] == 1)
+                    sum[i] += time[j];
             }
         }
 
-        return Collections.max(executionTimes);
+        /* Find the longest execution time. */
+        double result = 0;
+
+        for (int i = 0; i < n; i++) {
+            if (result < sum[i])
+                result = sum[i];
+        }
+
+        return result;
     }
 
     /**
@@ -177,11 +207,145 @@ public class BinaryPSO {
      */
     protected void initSwarm() {
         swarm = new ArrayList<Particle>();
+        runTime = calcRunTime();
 
+        /* Initialize each particle in the swarm. */
         for (int i = 0; i < numParticles; i++) {
-            swarm.add(new Particle(position, fitness, velocity, 
-                    bestPosition, bestFitness));
+            /* Calculate the initial positions matrix. */
+            ArrayList<int[]> positions = calcInitPositions();
+
+            /* Calculate the initial velocities matrix. */
+            ArrayList<double[]> velocities = calcInitVelocities();
+
+            /* Calculate the initial fitness value. */
+            double fitness = calcFitness(runTime, positions);
+
+            swarm.add(new Particle(positions, fitness, velocities, positions, 
+                        fitness));
         }
+    }
+
+    /**
+     * Calculate the runtime, which is the execution time of each cloudlet on 
+     * each VM, separately.
+     */
+    protected ArrayList<double[]> calcRunTime() {
+        ArrayList<double[]> runTime = new ArrayList<double[]>();
+
+        /* Iterate through all the VMs. */
+        for (int i = 0; i < n; i++) {
+            Vm vm = vmList.get(i);
+
+            /* Execution times of running cloudlet j on VM i. */
+            double[] times = new double[m]; 
+
+            /* Iterate through all the cloudlets. */
+            for (int j = 0; j < m; j++) {
+                Cloudlet cloudlet = cloudletList.get(j);
+                times[j] = (double) cloudlet.getCloudletLength() / 
+                    vm.getHost().getTotalAllocatedMipsForVm(vm);
+            }
+
+            runTime.add(times);
+        }
+
+        return runTime;
+    }
+
+    /**
+     * Calculate the initial positions matrix.
+     *
+     * @return Initial positions, ensured for complete jobs assignment.
+     */
+    protected ArrayList<int[]> calcInitPositions() {
+        ArrayList<int[]> initPositions = new ArrayList<int[]>();
+        int[] assignedTasks = new int[n];
+
+        /* Iterate through the VMs. */
+        for (int i = 0; i < n; i++) {
+            int[] randomPositions = new int[n];
+
+            /* Iterate through the cloudlets. */
+            for (int j = 0; j < m; j++) {
+                if (assignedTasks[j] == 0) {
+                    randomPositions[j] = random.nextInt(2);
+
+                    if (randomPositions[j] == 1)
+                        assignedTasks[j] = 1;
+                }
+                else {
+                    randomPositions[j] = 0;
+                }
+            }
+
+            initPositions.add(randomPositions);
+        }
+
+        /* Ensure that all jobs have been assigned to at least one VM. */
+        ArrayList<int[]> newPositions = ensureCompleteAssignment(initPositions, 
+                assignedTasks);
+
+        return newPositions;
+    }
+
+    /**
+     * Calculate the initial velocities matrix.
+     *
+     * @return Initial velocities, ensured for complete jobs assignment.
+     */
+    protected ArrayList<int[]> calcInitVelocities() {
+        ArrayList<double[]> initVelocities = new ArrayList<int[]>();
+        int[] assignedTasks = new int[n];
+
+        /* Iterate through the VMs. */
+        for (int i = 0; i < n; i++) {
+            double[] randomPositions = new double[n];
+
+            /* Iterate through the cloudlets. */
+            for (int j = 0; j < m; j++) {
+                if (assignedTasks[j] == 0) {
+                    randomPositions[j] = random.nextInt(2);
+
+                    if (randomPositions[j] == 1)
+                        assignedTasks[j] = 1;
+                }
+                else {
+                    randomPositions[j] = 0;
+                }
+            }
+
+            initPositions.add(randomPositions);
+        }
+
+        return initVelocities;
+    }
+
+    /**
+     * Ensure that all jobs are assigned to at least one VM in the given 
+     * positions matrix.
+     *
+     * @param initPositions The positions matrix to be checked for completeness.
+     * @param assignedTasks The list of already assigned tasks.
+     * @return New positions matrix.
+     */
+    protected ArrayList<int[]> ensureCompleteAssignment(
+            ArrayList<int[]> initPositions, int[] assignedTasks) {
+        ArrayList<int[]> newPositions = initPositions;
+
+        /* Check if task is not yet assigned. */
+        for (int i = 0; i < assignedTasks.length; i++) {
+            if (assignedTasks[i] == 0) {
+                /* Pick a random VM index. */
+                int x = random.nextInt(n);
+
+                int[] positions = newPositions.get(x);
+                positions[i] = 1;
+
+                newPositions.set(x, positions);
+            }
+        }
+
+        return newPositions;
     }
 
     /**
