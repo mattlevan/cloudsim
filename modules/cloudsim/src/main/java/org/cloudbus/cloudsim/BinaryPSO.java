@@ -1,6 +1,7 @@
 /*
  * Title:        CloudSim Toolkit
- * Description:  CloudSim (Cloud Simulation) Toolkit for Modeling and Simulation of Clouds
+ * Description:  CloudSim (Cloud Simulation) Toolkit for Modeling and 
+ * Simulation of Clouds
  * Licence:      GPL - http://www.gnu.org/copyleft/gpl.html
  *
  * Copyright (c) 2009-2012, The University of Melbourne, Australia
@@ -36,6 +37,9 @@ public class BinaryPSO {
     /* Global best solution. */
     ArrayList<double[]> globalBest;
 
+    /* Average fitness matrix. */
+    ArrayList<double[]> averageFitnesses;
+
     /* Global best fitness. */
     double globalBestFitness;
 
@@ -44,9 +48,6 @@ public class BinaryPSO {
 
     /* Number of cloudlets. */
     int m;
-
-    /* Inertial constant. */
-    double w;
 
     /* Cognitive constant. */
     final double c1;
@@ -105,7 +106,6 @@ public class BinaryPSO {
         this.m = cloudletList.size();
         this.globalBestFitness = Double.MAX_VALUE; // Small values are better.
         this.globalBest = new ArrayList<int[]>();
-        initSwarm(); // Initialize swarm with 100 particles.
         c1 = 1.49445; // Initialize cognitive constant.
         c2 = 1.49445; // Initialize social constants.
         w = 2.0; // Set the inertial weight.
@@ -119,10 +119,11 @@ public class BinaryPSO {
      * @todo:   Implement RIW, LDIW, and Combination techniques.
      * @param   numIterations Number of iterations.
      * @param   numParticles Number of individual particles.
-     * @return  Sets the global inertia value w.
+     * @return  The global inertia value w.
      */
-    protected void calculateInertia(int numIterations, int numParticles
-                                    int inertiaTechnique) {
+    protected double calcInertia(int numIterations, int numParticles
+                                    ArrayList<double[]> averageFitnesses) {
+        double w = 0;
         switch (inertiaTechnique) {
             /* Fixed Inertia Weight (FIW). */
             case 0: 
@@ -140,6 +141,8 @@ public class BinaryPSO {
             default:
                 break;
         }
+
+        return w;
     }
 
     /**
@@ -222,6 +225,25 @@ public class BinaryPSO {
 
             swarm.add(new Particle(positions, fitness, velocities, positions, 
                         fitness));
+
+            /* Initialize global best fitness value. */
+            if (swarm.get(i).fitness < globalBestFitness) {
+                globalBestFitness = swarm.get(i).fitness;
+                globalBest = swarm.get(i).position;
+            }
+        }
+
+        initAverageFitnesses();
+    }
+
+    /**
+     * Instantiate average fitness matrix. 
+     */
+    protected void initAverageFitnesses() {
+        averageFitnesses = new ArrayList<double[]>();
+
+        for (int i = 0; i < numParticles; i++) {
+            averageFitnesses.add(new double[numIterations]);
         }
     }
 
@@ -366,13 +388,44 @@ public class BinaryPSO {
      *  @post $none
      *  @return vmIds List of Vm ids to match cloudlets with. */
     protected List<Integer> run() {
-        List<Integer> vmIds = new List<Integer>();
+    /* Initialize swarm with numParticles particles. */
+        initSwarm(); 
 
         for (int i = 0; i < numIterations; i++) {
             for (int j = 0; j < numParticles; j++) {
+                /* Calculate inertia value. */
+                double w = calcInertia(j, i, averageFitnesses);
 
+                /* Calculate new velocities. */
+                calcNewVelocities();
+
+                /* Calculate new positions. */
+                // calcNewPositions();
+
+                /* Calculate the fitness. */
+                calcFitness();
+
+                /* Evaluate the solution. */
+                // evaluateSolution();
+
+                /* Update particle memory. */
+                // updateParticleMemory();
+
+                /* Update global best solution. */
+                // updateGlobalBest();
             }
         }
+    }
+
+    /**
+     * Calculate new velocities.
+     *
+     * @param w Inertia weight for the particle.
+     * @param p Particle.
+     *
+     */
+    protected void calcNewVelocities(double w, Particle p) {
+        ArrayList<double[]> newVelocitiesMatrix = new ArrayList<double[]>();
     }
 
     /** 
