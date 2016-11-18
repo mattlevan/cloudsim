@@ -43,6 +43,9 @@ public class BinaryPSO {
     /* Global best fitness. */
     double globalBestFitness;
 
+    /* Run times. */
+    ArrayList<double[]> runTime;
+
     /* Number of Vms. */
     int n;
 
@@ -397,10 +400,10 @@ public class BinaryPSO {
                 double w = calcInertia(j, i, averageFitnesses);
 
                 /* Calculate new velocities. */
-                calcNewVelocities();
+                calcNewVelocities(w, swarm.get(i));
 
                 /* Calculate new positions. */
-                // calcNewPositions();
+                calcNewPositions();
 
                 /* Calculate the fitness. */
                 calcFitness();
@@ -418,14 +421,102 @@ public class BinaryPSO {
     }
 
     /**
-     * Calculate new velocities.
+     * Calculate new positions.
      *
      * @param w Inertia weight for the particle.
      * @param p Particle.
      *
+     * @TODO: Implement rebalancePSO().
+     */
+    protected void calcNewPositions(double w, Particle p) {
+        ArrayList<int[]> newPositionsMatrix = new ArrayList<int[]>();
+        int[] assignedTasksArrayInPositionsMatrix = new int[m];
+
+        for (int i = 0; i < p.velocity.size(); i++) {
+            double[] vmVelocities = p.velocity.get(i);
+            
+            double[] newPosition = new double[n];
+
+            for (int j = 0; j < vmVelocities.length - 1; j++) {
+                p.r = random.nextInt(2);
+                
+                if (assignedTasksArrayInPositionsMatrix[j] == 0) {
+                    double s = p.s(vmVelocities[j]);
+
+                    if (s > p.r) {
+                        newPosition[j] = 1;
+                    }
+                    else {
+                        newPosition[j] = 0;
+                    }
+                    
+                    if (newPosition[j] == 1) {
+                        assignedTasksArrayInPositionsMatrix[j] = 1;
+                    }
+                }
+                else {
+                    newPosition[j] = 0;
+                }
+            }
+
+            /* Add new velocities to the ArrayList. */
+            newPositionsMatrix.add(newPosition);
+        }
+
+        /* Update the particle's position. */
+        newPositionsMatrix = ensureCompleteAssignment(newPositionsMatrix, 
+                assignedTasksArrayInPositionsMatrix);
+        newPositions = rebalancePSO(newPositionsMatrix, runTime);
+        p.position = newPositionsMatrix;
+    }
+
+    /**
+     * Calculate new velocities.
+     *
+     * @param w Inertia weight for the particle.
+     * @param p Particle.
      */
     protected void calcNewVelocities(double w, Particle p) {
         ArrayList<double[]> newVelocitiesMatrix = new ArrayList<double[]>();
+        int[] assignedTasksArrayInVelocityMatrix = new int[m];
+
+        for (int i = 0; i < p.velocity.size(); i++) {
+            double[] vmVelocities = p.velocity.get(i);
+            int[] vmBestPositions = p.bestPosition.get(i);
+            int[] vmPositions = p.position.get(i);
+            int[] vmGlobalBestPositions = globalBest.get(i);
+            
+            double[] newVelocities = new double[n];
+
+            for (int j = 0; j < vmVelocities.length - 1; j++) {
+                p.r1 = random.nextInt(2);
+                p.r2 = random.nextInt(2);
+                
+                if (assignedTasksArrayInVelocityMatrix[j] == 0) {
+                    /* Velocity vector. */
+                    newVelocities[j] = w * vmVelocities[j+1] + c1 * p.r1 * 
+                        (vmBestPositions[j] - vmPositions[j] + c2 * p.r2 * 
+                        (vmGlobalBestPositions[j] - vmPositions[j]));
+
+                    /* Formula 4. */
+                    if (newVelocities[j] < 0) {
+                        newVelocities[j] = 0;
+                    }
+                    else if (newVelocities[j] > 1) {
+                        newVelocities[j] = 1;
+                    }
+                }
+                else {
+                    newVelocities[j] = 0;
+                }
+            }
+
+            /* Add new velocities to the ArrayList. */
+            newVelocitiesMatrix.add(newVelocities);
+        }
+
+        /* Update the particle's velocity. */
+        p.velocity = newVelocitiesMatrix;
     }
 
     /** 
