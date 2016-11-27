@@ -1,6 +1,7 @@
 /*
  * Title:        CloudSim Toolkit
- * Description:  CloudSim (Cloud Simulation) Toolkit for Modeling and Simulation of Clouds
+ * Description:  CloudSim (Cloud Simulation) Toolkit for Modeling and 
+ * Simulation of Clouds
  * Licence:      GPL - http://www.gnu.org/copyleft/gpl.html
  *
  * Copyright (c) 2009-2012, The University of Melbourne, Australia
@@ -36,17 +37,20 @@ public class BinaryPSO {
     /* Global best solution. */
     ArrayList<int[]> globalBest;
 
+    /* Average fitness matrix. */
+    ArrayList<double[]> averageFitnesses;
+
     /* Global best fitness. */
     double globalBestFitness;
+
+    /* Run times. */
+    ArrayList<double[]> runTime;
 
     /* Number of Vms. */
     int n;
 
     /* Number of cloudlets. */
     int m;
-
-    /* Inertial constant. */
-    double w;
 
     /* Cognitive constant. */
     final double c1;
@@ -74,11 +78,8 @@ public class BinaryPSO {
 
     /* Solution counter for use in the calcSolutions method. */
     int iteration = 0;
+
     
-    /* Runtime matrix. */
-    ArrayList<double[]> runTime;
-
-
     /**
      * Constructor accepts a list of Vms and cloudlets.
      *
@@ -108,10 +109,8 @@ public class BinaryPSO {
         this.m = cloudletList.size();
         this.globalBestFitness = Double.MAX_VALUE; // Small values are better.
         this.globalBest = new ArrayList<int[]>();
-        initSwarm(); // Initialize swarm with 100 particles.
         c1 = 1.49445; // Initialize cognitive constant.
         c2 = 1.49445; // Initialize social constants.
-        w = 2.0; // Set the inertial weight.
         random = new Random();
         r = random.nextDouble(); // Initialize random number.
     }
@@ -122,10 +121,11 @@ public class BinaryPSO {
      * @todo:   Implement RIW, LDIW, and Combination techniques.
      * @param   numIterations Number of iterations.
      * @param   numParticles Number of individual particles.
-     * @return  Sets the global inertia value w.
+     * @return  The global inertia value w.
      */
-    protected void calculateInertia(int numIterations, int numParticles,
-                                    int inertiaTechnique) {
+    protected double calcInertia(int numIterations, int numParticles,
+                                    ArrayList<double[]> averageFitnesses) {
+        double w = 0;
         switch (inertiaTechnique) {
             /* Fixed Inertia Weight (FIW). */
             case 0: 
@@ -143,6 +143,8 @@ public class BinaryPSO {
             default:
                 break;
         }
+
+        return w;
     }
 
     /**
@@ -225,6 +227,25 @@ public class BinaryPSO {
 
             swarm.add(new Particle(positions, fitness, velocities, positions, 
                         fitness));
+
+            /* Initialize global best fitness value. */
+            if (swarm.get(i).fitness < globalBestFitness) {
+                globalBestFitness = swarm.get(i).fitness;
+                globalBest = swarm.get(i).position;
+            }
+        }
+
+        initAverageFitnesses();
+    }
+
+    /**
+     * Instantiate average fitness matrix. 
+     */
+    protected void initAverageFitnesses() {
+        averageFitnesses = new ArrayList<double[]>();
+
+        for (int i = 0; i < numParticles; i++) {
+            averageFitnesses.add(new double[numIterations]);
         }
     }
 
@@ -370,14 +391,134 @@ public class BinaryPSO {
      *  @return vmIds List of Vm ids to match cloudlets with. */
     protected List<Integer> run() {
         List<Integer> vmIds = new ArrayList<Integer>();
+    /* Initialize swarm with numParticles particles. */
+        initSwarm(); 
 
         for (int i = 0; i < numIterations; i++) {
             for (int j = 0; j < numParticles; j++) {
+                /* Calculate inertia value. */
+                double w = calcInertia(j, i, averageFitnesses);
 
+                /* Calculate new velocities. */
+                calcNewVelocities(w, swarm.get(i));
+
+                /* Calculate new positions. */
+                // calcNewPositions();
+
+                /* Calculate the fitness. */
+                // calcFitness();
+
+                /* Evaluate the solution. */
+                // evaluateSolution();
+
+                /* Update particle memory. */
+                // updateParticleMemory();
+
+                /* Update global best solution. */
+                // updateGlobalBest();
             }
         }
         
         return vmIds;
+    }
+
+    /**
+     * Calculate new positions.
+     *
+     * @param w Inertia weight for the particle.
+     * @param p Particle.
+     *
+     * @TODO: Implement rebalancePSO().
+     */
+    protected void calcNewPositions(double w, Particle p) {
+        ArrayList<int[]> newPositionsMatrix = new ArrayList<int[]>();
+        int[] assignedTasksArrayInPositionsMatrix = new int[m];
+
+        for (int i = 0; i < p.velocity.size(); i++) {
+            double[] vmVelocities = p.velocity.get(i);
+            
+            int[] newPosition = new int[n];
+
+            for (int j = 0; j < vmVelocities.length - 1; j++) {
+                p.r = random.nextInt(2);
+                
+                if (assignedTasksArrayInPositionsMatrix[j] == 0) {
+                    double s = s(vmVelocities[j]);
+
+                    if (s > p.r) {
+                        newPosition[j] = 1;
+                    }
+                    else {
+                        newPosition[j] = 0;
+                    }
+                    
+                    if (newPosition[j] == 1) {
+                        assignedTasksArrayInPositionsMatrix[j] = 1;
+                    }
+                }
+                else {
+                    newPosition[j] = 0;
+                }
+            }
+
+            /* Add new velocities to the ArrayList. */
+            newPositionsMatrix.add(newPosition);
+        }
+
+        /* Update the particle's position. */
+        newPositionsMatrix = ensureCompleteAssignment(newPositionsMatrix, 
+                assignedTasksArrayInPositionsMatrix);
+        // newPositionsMatrix = rebalancePSO(newPositionsMatrix, runTime);
+        p.position = newPositionsMatrix;
+    }
+
+    /**
+     * Calculate new velocities.
+     *
+     * @param w Inertia weight for the particle.
+     * @param p Particle.
+     */
+    protected void calcNewVelocities(double w, Particle p) {
+        ArrayList<double[]> newVelocitiesMatrix = new ArrayList<double[]>();
+        int[] assignedTasksArrayInVelocityMatrix = new int[m];
+
+        for (int i = 0; i < p.velocity.size(); i++) {
+            double[] vmVelocities = p.velocity.get(i);
+            int[] vmBestPositions = p.bestPosition.get(i);
+            int[] vmPositions = p.position.get(i);
+            int[] vmGlobalBestPositions = globalBest.get(i);
+            
+            double[] newVelocities = new double[n];
+
+            for (int j = 0; j < vmVelocities.length - 1; j++) {
+                p.r1 = random.nextInt(2);
+                p.r2 = random.nextInt(2);
+                
+                if (assignedTasksArrayInVelocityMatrix[j] == 0) {
+                    /* Velocity vector. */
+                    newVelocities[j] = w * vmVelocities[j+1] + c1 * p.r1 * 
+                        (vmBestPositions[j] - vmPositions[j] + c2 * p.r2 * 
+                        (vmGlobalBestPositions[j] - vmPositions[j]));
+
+                    /* Formula 4. */
+                    if (newVelocities[j] < 0) {
+                        newVelocities[j] = 0;
+                    }
+                    else if (newVelocities[j] > 1) {
+                        newVelocities[j] = 1;
+                    }
+                }
+                else {
+                    newVelocities[j] = 0;
+                }
+            }
+
+            /* Add new velocities to the ArrayList. */
+            newVelocitiesMatrix.add(newVelocities);
+        }
+
+        /* Update the particle's velocity. */
+        p.velocity = newVelocitiesMatrix;
     }
 
     /** 
@@ -455,7 +596,7 @@ public class BinaryPSO {
      * @param list Collection<T>.
      * @return Power set of the list.
      */
-	public static <T> List<List<T>> powerSet(Collection<T> list) {
+	protected <T> List<List<T>> powerSet(Collection<T> list) {
 	    List<List<T>> ps = new ArrayList<List<T>>();
 	    ps.add(new ArrayList<T>());   // Add the empty set.
 	 
@@ -476,5 +617,14 @@ public class BinaryPSO {
 	        ps = newPs;
 	    }
 	    return ps;
+	}
+	
+	/**
+	 * Sigmoid function.
+	 * 
+	 * @param x Parameter of type double.
+	 */
+	protected double s(double x) {
+		return 1/(1 + Math.exp(-x));
 	}
 }
