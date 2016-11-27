@@ -186,23 +186,6 @@ public class BinaryPSO {
         return result;
     }
 
-    /**
-     * Calculate execution time of the power set of cloudlets on a single Vm.
-     *
-     * @param vm Vm to calculate execution time on.
-     * @return Execution time of all cloudlets on vm.
-     */
-    private double calcExecutionTime(Vm vm, List<Cloudlet> subset) {
-        double total = 0.0;
-
-        for (Cloudlet cloudlet : subset) {
-            total += cloudlet.getCloudletLength() / 
-                vm.getHost().getTotalAllocatedMipsForVm(vm);
-        }
-        
-        return total;
-    }
-
     /** 
      * Initialize the swarm with numParticles particles. 
      * 
@@ -564,8 +547,9 @@ public class BinaryPSO {
 
         if (iteration >= cloudletList.size()-2) {
             for (List<Integer> x : ps) {
-                ArrayList<ArrayList<Integer>> t = 
-                    (ArrayList<ArrayList<Integer>>) pastCalculations.clone();
+                @SuppressWarnings("unchecked")
+				ArrayList<ArrayList<Integer>> t = 
+                		(ArrayList<ArrayList<Integer>>) pastCalculations.clone();
                 ArrayList<Integer> remaining = new 
                     ArrayList<Integer>(remainingList);
                 remaining.removeAll(x);
@@ -579,7 +563,8 @@ public class BinaryPSO {
         }
         else {
             for (List<Integer> x : ps) {
-                ArrayList<ArrayList<Integer>> t = 
+                @SuppressWarnings("unchecked")
+				ArrayList<ArrayList<Integer>> t = 
                     (ArrayList<ArrayList<Integer>>) pastCalculations.clone();
                 ArrayList<Integer> remaining = new 
                     ArrayList<Integer>(remainingList);
