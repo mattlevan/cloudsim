@@ -35,7 +35,7 @@ import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
  * to complete the execution depending on
  * the requested VM performance.
  */
-public class CloudSimExample3 {
+public class PSOExample {
 
 	/** The cloudlet list. */
 	private static List<Cloudlet> cloudletList;

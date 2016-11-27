@@ -1,16 +1,21 @@
+package org.cloudbus.cloudsim;
+
 /**
  * Particle class implements the particle for building a swarm.
  *
- * @todo: How exactly is the fitness calculated? Does each particle calculate 
+ * TODO: How exactly is the fitness calculated? Does each particle calculate 
  * execution times of the entire power set of cloudlets on only a single Vm or 
  * on every Vm? 
  *
- * @todo: Also, does each particle only calculate execution times of a 
+ * TODO: Also, does each particle only calculate execution times of a 
  * partition of the power set of cloudlets?
  *
- * @todo: How does the particle express the personal current and best 
+ * TODO: How does the particle express the personal current and best 
  * solutions (in terms of pairings)?
  */
+
+import java.util.*;
+
 class Particle {
     /* List of cloudlets. */
     List<Cloudlet> cloudletList;
@@ -57,32 +62,4 @@ class Particle {
         this.bestPosition = bestPosition;
         this.bestFitness = bestFitness;
     }
-
-    /** Calculate new velocities. */
-    public void calcNewVelocities(double w, double c1, double c2, double g) {
-        for (int i = 0; i < v.length; i++) {
-            r1 = random.nextInt();
-            r2 = random.nextInt();
-            v[i] = w*v[i]+c1*r1*(best-current)+c2*r2*(g-current);
-        }
-    }
-
-    /** Calculate personal current solution. */
-    public void calcCurrent() {
-        p[current] = current+v;
-    }
-
-    /** Sigmoid function. */
-    public double s(double current) {
-        return 1/(1+Math.exp(-1*current));
-    }
-
-    /** Calculate position. */
-    public double calcPosition() {
-        if (s(p[current]) <= r)
-            p[current] = 0;
-        else
-            p[current]  = 1;
-    }
-
 }

@@ -34,7 +34,7 @@ public class BinaryPSO {
     List<ArrayList<ArrayList<Integer>>> solutions;
 
     /* Global best solution. */
-    ArrayList<double[]> globalBest;
+    ArrayList<int[]> globalBest;
 
     /* Global best fitness. */
     double globalBestFitness;
@@ -70,10 +70,13 @@ public class BinaryPSO {
     final int inertiaTechnique;
 
     /* Fixed inertia weight. */
-    final double fixedIntertiaWeight = 0.5;
+    double fixedInertiaWeight = 0.5;
 
     /* Solution counter for use in the calcSolutions method. */
     int iteration = 0;
+    
+    /* Runtime matrix. */
+    ArrayList<double[]> runTime;
 
 
     /**
@@ -95,7 +98,7 @@ public class BinaryPSO {
     public BinaryPSO(List<Vm> vmList, List<Cloudlet> cloudletList, 
                      int numIterations, int numParticles, int inertiaTechnique) {
         this.vmList = vmList;
-        this.coudletList = cloudletList;
+        this.cloudletList = cloudletList;
         this.numIterations = numIterations;
         this.numParticles = numParticles;
         this.inertiaTechnique = inertiaTechnique;
@@ -121,7 +124,7 @@ public class BinaryPSO {
      * @param   numParticles Number of individual particles.
      * @return  Sets the global inertia value w.
      */
-    protected void calculateInertia(int numIterations, int numParticles
+    protected void calculateInertia(int numIterations, int numParticles,
                                     int inertiaTechnique) {
         switch (inertiaTechnique) {
             /* Fixed Inertia Weight (FIW). */
@@ -293,8 +296,8 @@ public class BinaryPSO {
      *
      * @return Initial velocities, ensured for complete jobs assignment.
      */
-    protected ArrayList<int[]> calcInitVelocities() {
-        ArrayList<double[]> initVelocities = new ArrayList<int[]>();
+    protected ArrayList<double[]> calcInitVelocities() {
+        ArrayList<double[]> initVelocities = new ArrayList<double[]>();
         int[] assignedTasks = new int[n];
 
         /* Iterate through the VMs. */
@@ -314,7 +317,7 @@ public class BinaryPSO {
                 }
             }
 
-            initPositions.add(randomPositions);
+            initVelocities.add(randomPositions);
         }
 
         return initVelocities;
@@ -354,9 +357,9 @@ public class BinaryPSO {
      * @param solution Don't know yet.
      */
     protected void evaluateSolution(double solution) {
-        if (solution < g) {
-            g = solution;
-        }
+//        if (solution < g) {
+//            g = solution;
+//        }
     }
 
     /** 
@@ -366,13 +369,15 @@ public class BinaryPSO {
      *  @post $none
      *  @return vmIds List of Vm ids to match cloudlets with. */
     protected List<Integer> run() {
-        List<Integer> vmIds = new List<Integer>();
+        List<Integer> vmIds = new ArrayList<Integer>();
 
         for (int i = 0; i < numIterations; i++) {
             for (int j = 0; j < numParticles; j++) {
 
             }
         }
+        
+        return vmIds;
     }
 
     /** 
@@ -380,7 +385,7 @@ public class BinaryPSO {
      *
      * @param fixedInertiaWeight The desired value.
      */
-    protected void setFixedInertiaWeight(int fixedInertiaWeight) {
+    protected void setFixedInertiaWeight(double fixedInertiaWeight) {
         this.fixedInertiaWeight = fixedInertiaWeight;
     }
 
@@ -422,7 +427,7 @@ public class BinaryPSO {
                     (ArrayList<ArrayList<Integer>>) pastCalculations.clone();
                 ArrayList<Integer> remaining = new 
                     ArrayList<Integer>(remainingList);
-                remaining.removeall(x);
+                remaining.removeAll(x);
                 t.add((ArrayList<Integer>) x);
                 t.add(remaining);
                 solutions.add(t);
@@ -436,7 +441,7 @@ public class BinaryPSO {
                 ArrayList<ArrayList<Integer>> t = 
                     (ArrayList<ArrayList<Integer>>) pastCalculations.clone();
                 ArrayList<Integer> remaining = new 
-                    ArraList<Integer>(remainingList);
+                    ArrayList<Integer>(remainingList);
                 t.add((ArrayList<Integer>) x);
                 remaining.removeAll(x);
                 calcSolutions((ArrayList<Integer>) remaining, t, iteration+1);
