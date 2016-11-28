@@ -118,7 +118,7 @@ public class BinaryPSO {
     /**
      * The inertia weight w can be calculated with a variety of techniques:
      *
-     * @todo:   Implement RIW, LDIW, and Combination techniques.
+     * TODO:   Implement RIW, LDIW, and Combination techniques.
      * @param   numIterations Number of iterations.
      * @param   numParticles Number of individual particles.
      * @return  The global inertia value w.
