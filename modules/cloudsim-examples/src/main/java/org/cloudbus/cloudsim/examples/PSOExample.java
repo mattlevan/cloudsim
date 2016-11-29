@@ -137,7 +137,7 @@ public class PSOExample {
 
         	printCloudletList(newList);
 
-			Log.printLine("CloudSimExample3 finished!");
+			Log.printLine("PSOExample finished!");
 		}
 		catch (Exception e) {
 			e.printStackTrace();
