@@ -399,7 +399,8 @@ public class DatacenterBroker extends SimEntity {
 
 		int vmIndex = vmIds.remove(0); // Get the first vmId in the vmIds list.
 		List<Cloudlet> successfullySubmitted = new ArrayList<Cloudlet>();
-		for (Cloudlet cloudlet : getCloudletList()) {
+		for (int i = 0; i < getCloudletList().size(); i++) {
+			Cloudlet cloudlet = getCloudletList().get(i);
 			Vm vm;
 			// if user didn't bind this cloudlet and it has not been executed yet
 			if (cloudlet.getVmId() == -1) {
@@ -425,7 +426,9 @@ public class DatacenterBroker extends SimEntity {
 			sendNow(getVmsToDatacentersMap().get(vm.getId()), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
 			cloudletsSubmitted++;
 			// vmIndex = (vmIndex + 1) % getVmsCreatedList().size();
-            vmIndex = vmIds.remove(0);
+			if (i != getCloudletList().size() - 1) {
+				vmIndex = vmIds.remove(0);
+			}
 			getCloudletSubmittedList().add(cloudlet);
 			successfullySubmitted.add(cloudlet);
 		}

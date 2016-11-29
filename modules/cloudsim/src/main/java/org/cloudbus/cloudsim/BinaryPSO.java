@@ -18,62 +18,62 @@ import java.util.*;
  * @author Amlan Chatterjee, Crosby Lanham, Matt Levan, Mishael Zerrudo
  */
 public class BinaryPSO {
-    /* List of Vms for submission to cloud resources. */
+    /** List of Vms for submission to cloud resources. */
     private List<Vm> vmList;
     
-    /* List of cloudlets for submission to cloud resources. */
+    /** List of cloudlets for submission to cloud resources. */
     private List<Cloudlet> cloudletList;
 
-    /* Particle swarm for evaluating resources and finding a Vm 
+    /** Particle swarm for evaluating resources and finding a Vm
      * solution for each cloudlet. */
     private List<Particle> swarm;
 
-    /* List of all possible solutions. */
+    /** List of all possible solutions. */
     private List<ArrayList<ArrayList<Integer>>> solutions;
 
-    /* Global best solution. */
+    /** Global best solution. */
     private ArrayList<int[]> globalBest;
 
-    /* Average fitness matrix. */
+    /** Average fitness matrix. */
     private ArrayList<double[]> averageFitnesses;
 
-    /* Global best fitness. */
+    /** Global best fitness. */
     private double globalBestFitness;
 
-    /* Run times. */
+    /** Run times. */
     private ArrayList<double[]> runTime;
 
-    /* Number of Vms. */
+    /** Number of Vms. */
     private int n;
 
-    /* Number of cloudlets. */
+    /** Number of cloudlets. */
     private int m;
 
-    /* Cognitive constant. */
+    /** Cognitive constant. */
     private final double c1;
 
-    /* Social constant. */
+    /** Social constant. */
     private final double c2;
 
-    /* Uniform random number. */
+    /** Uniform random number. */
     private final double r;
 
-    /* Random Object. */
+    /** Random Object. */
     private Random random;
 
-    /* Number of iterations. */
+    /** Number of iterations. */
     private final int numIterations;
 
-    /* Number of particles. */
+    /** Number of particles. */
     private final int numParticles;
 
-    /* Inertia calculation technique choice. */
+    /** Inertia calculation technique choice. */
     private final int inertiaTechnique;
 
-    /* Fixed inertia weight. */
+    /** Fixed inertia weight. */
     private double fixedInertiaWeight = 0.5;
 
-    /* Solution counter for use in the calcSolutions method. */
+    /** Solution counter for use in the calcSolutions method. */
     private int iteration = 0;
 
     
@@ -390,7 +390,7 @@ public class BinaryPSO {
         for (int i = 0; i < numIterations; i++) {
             for (int j = 0; j < numParticles; j++) {
                 /* Get current particle and attributes from swarm. */
-                Particle currentParticle = swarm.get(i);
+                Particle currentParticle = swarm.get(j);
                 // ArrayList<double[]> currentVelocity = currentParticle.velocity;
                 ArrayList<int[]> currentPosition = currentParticle.position;
 
@@ -415,10 +415,38 @@ public class BinaryPSO {
                 /* Evaluate the solution and update the current particle and
                  * global bests if appropriate. */
                 evaluateSolution(newFitness, currentPosition, currentParticle);
+
+                /* Add the new fitness to the averageFitnesses array. */
+                double[] fitnessArray = averageFitnesses.get(j);
+                fitnessArray[i] = newFitness;
+                averageFitnesses.set(j, fitnessArray);
             }
         }
         
-        return vmIds;
+        return getCloudletPositions(globalBest);
+    }
+
+    /**
+     * Gets the cloudlet positions and returns them to DatacenterBroker.java.
+     *
+     * @param globalBest The global best positions matrix.
+     * @return The VM positions for each cloudlet to be
+     * allocated by the broker.
+     */
+    private ArrayList<Integer> getCloudletPositions(ArrayList<int[]> globalBest) {
+        Integer[] cloudletPositions = new Integer[m];
+
+        for (int i = 0; i < n; i++) {
+            int[] vm = globalBest.get(i);
+
+            for (int j = 0; j < m; j++) {
+                if (vm[j] == 1) {
+                    cloudletPositions[i] = j;
+                }
+            }
+        }
+
+        return new ArrayList<Integer>(Arrays.asList(cloudletPositions));
     }
 
     /**
