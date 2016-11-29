@@ -19,65 +19,62 @@ import java.util.*;
  */
 public class BinaryPSO {
     /* List of Vms for submission to cloud resources. */
-    List<Vm> vmList;
+    private List<Vm> vmList;
     
     /* List of cloudlets for submission to cloud resources. */
-    List<Cloudlet> cloudletList;
-
-    /* Power set of list of cloudlets. */
-    List<List<Cloudlet>> ps;
+    private List<Cloudlet> cloudletList;
 
     /* Particle swarm for evaluating resources and finding a Vm 
      * solution for each cloudlet. */
-    List<Particle> swarm;
+    private List<Particle> swarm;
 
     /* List of all possible solutions. */
-    List<ArrayList<ArrayList<Integer>>> solutions;
+    private List<ArrayList<ArrayList<Integer>>> solutions;
 
     /* Global best solution. */
-    ArrayList<int[]> globalBest;
+    private ArrayList<int[]> globalBest;
 
     /* Average fitness matrix. */
-    ArrayList<double[]> averageFitnesses;
+    private ArrayList<double[]> averageFitnesses;
 
     /* Global best fitness. */
-    double globalBestFitness;
+    private double globalBestFitness;
 
     /* Run times. */
-    ArrayList<double[]> runTime;
+    private ArrayList<double[]> runTime;
 
     /* Number of Vms. */
-    int n;
+    private int n;
 
     /* Number of cloudlets. */
-    int m;
+    private int m;
 
     /* Cognitive constant. */
-    final double c1;
+    private final double c1;
 
     /* Social constant. */
-    final double c2;
+    private final double c2;
 
     /* Uniform random number. */
-    final double r;
+    private final double r;
 
     /* Random Object. */
-    Random random;
+    private Random random;
 
     /* Number of iterations. */
-    final int numIterations;
+    private final int numIterations;
 
     /* Number of particles. */
-    final int numParticles;
+    private final int numParticles;
 
     /* Inertia calculation technique choice. */
-    final int inertiaTechnique;
+    private final int inertiaTechnique;
 
     /* Fixed inertia weight. */
-    double fixedInertiaWeight = 0.5;
+    private double fixedInertiaWeight = 0.5;
 
     /* Solution counter for use in the calcSolutions method. */
-    int iteration = 0;
+    private int iteration = 0;
 
     
     /**
@@ -103,7 +100,6 @@ public class BinaryPSO {
         this.numIterations = numIterations;
         this.numParticles = numParticles;
         this.inertiaTechnique = inertiaTechnique;
-        this.ps = powerSet(cloudletList);
         this.solutions = new ArrayList<ArrayList<ArrayList<Integer>>>();
         this.n = vmList.size();
         this.m = cloudletList.size();
@@ -118,7 +114,7 @@ public class BinaryPSO {
     /**
      * The inertia weight w can be calculated with a variety of techniques:
      *
-     * TODO:   Implement RIW, LDIW, and Combination techniques.
+     * TODO:    Implement RIW, LDIW, and combination techniques.
      * @param   numIterations Number of iterations.
      * @param   numParticles Number of individual particles.
      * @return  The global inertia value w.
@@ -193,7 +189,7 @@ public class BinaryPSO {
      * and fitness and use those values to instantiate all particles in 
      * the swarm.
      */
-    protected void initSwarm() {
+    private void initSwarm() {
         swarm = new ArrayList<Particle>();
         runTime = calcRunTime();
 
@@ -224,7 +220,7 @@ public class BinaryPSO {
     /**
      * Instantiate average fitness matrix. 
      */
-    protected void initAverageFitnesses() {
+    private void initAverageFitnesses() {
         averageFitnesses = new ArrayList<double[]>();
 
         for (int i = 0; i < numParticles; i++) {
@@ -384,20 +380,18 @@ public class BinaryPSO {
 
     /** 
      * Run the particle swarm optimization algorithm. 
-     *  
-     *  @pre $none
-     *  @post $none
+     *
      *  @return vmIds List of Vm ids to match cloudlets with. */
     protected List<Integer> run() {
         List<Integer> vmIds = new ArrayList<Integer>();
-    /* Initialize swarm with numParticles particles. */
+        /* Initialize swarm with numParticles particles. */
         initSwarm(); 
 
         for (int i = 0; i < numIterations; i++) {
             for (int j = 0; j < numParticles; j++) {
                 /* Get current particle and attributes from swarm. */
                 Particle currentParticle = swarm.get(i);
-                ArrayList<double[]> currentVelocity = currentParticle.velocity;
+                // ArrayList<double[]> currentVelocity = currentParticle.velocity;
                 ArrayList<int[]> currentPosition = currentParticle.position;
 
                 /* Calculate inertia value. */
@@ -418,14 +412,9 @@ public class BinaryPSO {
                 double newFitness = calcFitness(runTime, currentPosition);
                 currentParticle.fitness = newFitness;
 
-                /* Evaluate the solution. */
+                /* Evaluate the solution and update the current particle and
+                 * global bests if appropriate. */
                 evaluateSolution(newFitness, currentPosition, currentParticle);
-
-                /* Update particle memory. */
-                // updateParticleMemory();
-
-                /* Update global best solution. */
-                // updateGlobalBest();
             }
         }
         
@@ -439,7 +428,7 @@ public class BinaryPSO {
      * @param p Particle.
      *
      */
-    protected void calcNewPositions(double w, Particle p) {
+    private void calcNewPositions(double w, Particle p) {
         ArrayList<int[]> newPositionsMatrix = new ArrayList<int[]>();
         int[] assignedTasksArrayInPositionsMatrix = new int[m];
 
@@ -488,7 +477,7 @@ public class BinaryPSO {
      * @param runTime The run time matrix.
      * @return Rebalanced positions matrix.
      */
-    protected ArrayList<int[]> rebalancePSO(ArrayList<int[]> newPositionsMatrix,
+    private ArrayList<int[]> rebalancePSO(ArrayList<int[]> newPositionsMatrix,
                                           ArrayList<double[]> runTime) {
         boolean done = false;
         int counter = 0;
@@ -561,7 +550,7 @@ public class BinaryPSO {
      * @param w Inertia weight for the particle.
      * @param p Particle.
      */
-    protected void calcNewVelocities(double w, Particle p) {
+    private void calcNewVelocities(double w, Particle p) {
         ArrayList<double[]> newVelocitiesMatrix = new ArrayList<double[]>();
         int[] assignedTasksArrayInVelocityMatrix = new int[m];
 
@@ -609,107 +598,16 @@ public class BinaryPSO {
      *
      * @param fixedInertiaWeight The desired value.
      */
-    protected void setFixedInertiaWeight(double fixedInertiaWeight) {
+    private void setFixedInertiaWeight(double fixedInertiaWeight) {
         this.fixedInertiaWeight = fixedInertiaWeight;
     }
-
-    /**
-     * Generates the search space by calculating all possible solutions as 
-     * a function of the cloudletList and vmList.
-     */
-    protected void genSearchSpace() {
-        /* Generate a list of cloudletId integers to pass to calcSolutions. */
-        ArrayList<Integer> cloudletIds = new ArrayList<Integer>();
-        for (Cloudlet cloudlet : cloudletList) {
-            cloudletIds.add(cloudlet.getCloudletId());
-        }
-
-        /* Instantiate a new list that stores calculations for the 
-         * recursive calcSolutions() to use. */ 
-        ArrayList<ArrayList<Integer>> pastCalculations = 
-            new ArrayList<ArrayList<Integer>>();
-
-        /* Run the recursive helper function. */
-        calcSolutions(cloudletIds, pastCalculations, iteration);
-    }
-
-    /**
-     * Calculates all possible solutions as a function of the cloudletList and 
-     * vmList (helper function for genSearchSpace())).
-     * 
-     * @param remainingList List of remaining cloudlets.
-     * @param pastCalculations List of previously calculated solutions.
-     * @param iteration Iteration counter.
-     */
-    protected void calcSolutions(ArrayList<Integer> remainingList, 
-            ArrayList<ArrayList<Integer>> pastCalculations, int iteration) {
-        List<List<Integer>> ps = powerSet(remainingList);
-
-        if (iteration >= cloudletList.size()-2) {
-            for (List<Integer> x : ps) {
-                @SuppressWarnings("unchecked")
-				ArrayList<ArrayList<Integer>> t = 
-                		(ArrayList<ArrayList<Integer>>) pastCalculations.clone();
-                ArrayList<Integer> remaining = new 
-                    ArrayList<Integer>(remainingList);
-                remaining.removeAll(x);
-                t.add((ArrayList<Integer>) x);
-                t.add(remaining);
-                solutions.add(t);
-            }
-
-            /* Reset the iteration counter. */
-            iteration = 0;
-        }
-        else {
-            for (List<Integer> x : ps) {
-                @SuppressWarnings("unchecked")
-				ArrayList<ArrayList<Integer>> t = 
-                    (ArrayList<ArrayList<Integer>>) pastCalculations.clone();
-                ArrayList<Integer> remaining = new 
-                    ArrayList<Integer>(remainingList);
-                t.add((ArrayList<Integer>) x);
-                remaining.removeAll(x);
-                calcSolutions((ArrayList<Integer>) remaining, t, iteration+1);
-            }
-        }
-    }
-
-    /** 
-     * Generate power set. 
-     *
-     * @param list Collection<T>.
-     * @return Power set of the list.
-     */
-	protected <T> List<List<T>> powerSet(Collection<T> list) {
-	    List<List<T>> ps = new ArrayList<List<T>>();
-	    ps.add(new ArrayList<T>());   // Add the empty set.
-	 
-	    // For every item in the original list...
-	    for (T item : list) {
-	        List<List<T>> newPs = new ArrayList<List<T>>();
-	 
-	        for (List<T> subset : ps) {
-	            // Copy all of the current powerset's subsets.
-	            newPs.add(subset);
-	 
-	            // Plus the subsets appended with the current item.
-	            List<T> newSubset = new ArrayList<T>(subset);
-	            newSubset.add(item);
-	            newPs.add(newSubset);
-	        }
-	 
-	        ps = newPs;
-	    }
-	    return ps;
-	}
 	
 	/**
 	 * Sigmoid function.
 	 * 
 	 * @param x Parameter of type double.
 	 */
-	protected double s(double x) {
+	private double s(double x) {
 		return 1/(1 + Math.exp(-x));
 	}
 }

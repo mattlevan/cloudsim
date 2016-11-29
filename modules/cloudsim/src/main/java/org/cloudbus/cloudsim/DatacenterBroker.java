@@ -393,8 +393,9 @@ public class DatacenterBroker extends SimEntity {
          * @see #submitCloudletList(java.util.List) 
 	 */
 	protected void submitCloudlets() {
-        // BinaryPSO pso = new BinaryPSO(getVmsCreatedList(), getCloudletList());
-        // List<Integer> vmIds = pso.run();
+		BinaryPSO pso = new BinaryPSO(getVmsCreatedList(), getCloudletList(),
+		1000, 100, 0);
+        List<Integer> vmIds = pso.run();
 
 		int vmIndex = vmIds.remove(0); // Get the first vmId in the vmIds list.
 		List<Cloudlet> successfullySubmitted = new ArrayList<Cloudlet>();
@@ -407,7 +408,8 @@ public class DatacenterBroker extends SimEntity {
 				vm = VmList.getById(getVmsCreatedList(), cloudlet.getVmId());
 				if (vm == null) { // vm was not created
 					if(!Log.isDisabled()) {				    
-					    Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Postponing execution of cloudlet ",
+					    Log.printConcatLine(CloudSim.clock(), ": ", getName(),
+								": Postponing execution of cloudlet ",
 							cloudlet.getCloudletId(), ": bount VM not available");
 					}
 					continue;
