@@ -462,7 +462,7 @@ public class BinaryPSO {
      * @param runTime The run time matrix.
      * @return Rebalanced positions matrix.
      */
-    private ArrayList<int[]> rebalancePSO(ArrayList<int[]> newPositionsMatrix,
+    protected ArrayList<int[]> rebalancePSO(ArrayList<int[]> newPositionsMatrix,
                                           ArrayList<double[]> runTime) {
         boolean done = false;
         int counter = 0;
