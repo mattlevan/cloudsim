@@ -451,7 +451,7 @@ public class BinaryPSO {
         /* Update the particle's position. */
         newPositionsMatrix = ensureCompleteAssignment(newPositionsMatrix, 
                 assignedTasksArrayInPositionsMatrix);
-        // newPositionsMatrix = rebalancePSO(newPositionsMatrix, runTime);
+        newPositionsMatrix = rebalancePSO(newPositionsMatrix, runTime);
         p.position = newPositionsMatrix;
     }
 
