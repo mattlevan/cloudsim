@@ -335,7 +335,7 @@ public class BinaryPSO {
      * @param assignedTasks The list of already assigned tasks.
      * @return New positions matrix.
      */
-    protected ArrayList<int[]> ensureCompleteAssignment(
+    private ArrayList<int[]> ensureCompleteAssignment(
             ArrayList<int[]> initPositions, int[] assignedTasks) {
         ArrayList<int[]> newPositions = initPositions;
 
@@ -386,7 +386,7 @@ public class BinaryPSO {
                 calcNewVelocities(w, swarm.get(i));
 
                 /* Calculate new positions. */
-                // calcNewPositions();
+                calcNewPositions(w, swarm.get(i));
 
                 /* Calculate the fitness. */
                 // calcFitness();
@@ -411,7 +411,6 @@ public class BinaryPSO {
      * @param w Inertia weight for the particle.
      * @param p Particle.
      *
-     * @TODO: Implement rebalancePSO().
      */
     protected void calcNewPositions(double w, Particle p) {
         ArrayList<int[]> newPositionsMatrix = new ArrayList<int[]>();
