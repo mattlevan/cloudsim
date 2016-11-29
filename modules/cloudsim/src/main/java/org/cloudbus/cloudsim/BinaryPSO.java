@@ -123,7 +123,7 @@ public class BinaryPSO {
      * @param   numParticles Number of individual particles.
      * @return  The global inertia value w.
      */
-    protected double calcInertia(int numIterations, int numParticles,
+    private double calcInertia(int numIterations, int numParticles,
                                     ArrayList<double[]> averageFitnesses) {
         double w = 0;
         switch (inertiaTechnique) {
@@ -161,7 +161,7 @@ public class BinaryPSO {
      *
      * @return The double fitness value.
      */
-    protected double calcFitness(ArrayList<double[]> runTime, 
+    private double calcFitness(ArrayList<double[]> runTime,
             ArrayList<int[]> positions) {
         double[] sum = new double[n];
         
@@ -236,7 +236,7 @@ public class BinaryPSO {
      * Calculate the runtime, which is the execution time of each cloudlet on 
      * each VM, separately.
      */
-    protected ArrayList<double[]> calcRunTime() {
+    private ArrayList<double[]> calcRunTime() {
         ArrayList<double[]> runTime = new ArrayList<double[]>();
 
         /* Iterate through all the VMs. */
@@ -264,7 +264,7 @@ public class BinaryPSO {
      *
      * @return Initial positions, ensured for complete jobs assignment.
      */
-    protected ArrayList<int[]> calcInitPositions() {
+    private ArrayList<int[]> calcInitPositions() {
         ArrayList<int[]> initPositions = new ArrayList<int[]>();
         int[] assignedTasks = new int[n];
 
@@ -300,7 +300,7 @@ public class BinaryPSO {
      *
      * @return Initial velocities, ensured for complete jobs assignment.
      */
-    protected ArrayList<double[]> calcInitVelocities() {
+    private ArrayList<double[]> calcInitVelocities() {
         ArrayList<double[]> initVelocities = new ArrayList<double[]>();
         int[] assignedTasks = new int[n];
 
@@ -356,14 +356,30 @@ public class BinaryPSO {
     }
 
     /**
-     * Evaluate a given solution. 
+     * Evaluate a given solution and update the particle and global bests if
+     * necessary.
      *
-     * @param solution Don't know yet.
+     * @param newFitness The current particle's fitness.
+     * @param currentPosition The current particle's position.
+     * @param currentParticle The current particle.
      */
-    protected void evaluateSolution(double solution) {
-//        if (solution < g) {
-//            g = solution;
-//        }
+    private void evaluateSolution(double newFitness,
+                                    ArrayList<int[]> currentPosition,
+                                    Particle currentParticle) {
+        /* If the newFitness is better than the current particle's fitness... */
+        if (newFitness < currentParticle.fitness) {
+            /* Update the particle's fitness. */
+            currentParticle.fitness = newFitness;
+
+            /* Update the particle's position. */
+            currentParticle.position = currentPosition;
+        }
+
+        /* If the newFitness is better than the globalBestFitness... */
+        if (newFitness < globalBestFitness) {
+            globalBestFitness = newFitness;
+            globalBest = currentPosition;
+        }
     }
 
     /** 
@@ -379,20 +395,31 @@ public class BinaryPSO {
 
         for (int i = 0; i < numIterations; i++) {
             for (int j = 0; j < numParticles; j++) {
+                /* Get current particle and attributes from swarm. */
+                Particle currentParticle = swarm.get(i);
+                ArrayList<double[]> currentVelocity = currentParticle.velocity;
+                ArrayList<int[]> currentPosition = currentParticle.position;
+
                 /* Calculate inertia value. */
                 double w = calcInertia(j, i, averageFitnesses);
 
                 /* Calculate new velocities. */
-                calcNewVelocities(w, swarm.get(i));
+                calcNewVelocities(w, currentParticle);
 
                 /* Calculate new positions. */
-                calcNewPositions(w, swarm.get(i));
+                calcNewPositions(w, currentParticle);
 
-                /* Calculate the fitness. */
-                // calcFitness();
+                /* Calculate the fitness.
+                 *
+                 * @TODO: Modify calcFitness() to return void and take the
+                 * particle as a parameter, updating the particle's fitness
+                 * within the method itself.
+                 */
+                double newFitness = calcFitness(runTime, currentPosition);
+                currentParticle.fitness = newFitness;
 
                 /* Evaluate the solution. */
-                // evaluateSolution();
+                evaluateSolution(newFitness, currentPosition, currentParticle);
 
                 /* Update particle memory. */
                 // updateParticleMemory();
