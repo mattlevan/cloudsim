@@ -456,6 +456,80 @@ public class BinaryPSO {
     }
 
     /**
+     * Rebalances the solution found by PSO for better solutions.
+     *
+     * @param newPositionsMatrix Positions matrix.
+     * @param runTime The run time matrix.
+     * @return Rebalanced positions matrix.
+     */
+    private ArrayList<int[]> rebalancePSO(ArrayList<int[]> newPositionsMatrix,
+                                          ArrayList<double[]> runTime) {
+        boolean done = false;
+        int counter = 0;
+
+        while (!done) {
+            double [] sum = new double[n];
+
+            for (int i = 0; i < n; i++) {
+                double[] time = runTime.get(i);
+                int[] position = newPositionsMatrix.get(i);
+
+                for (int j = 0; j < position.length; j++) {
+                    if (position[j] == 1) {
+                        sum[i] += time[j];
+                    }
+                }
+            }
+
+            int heaviestLoad = 0;
+            int lightestLoad = 0;
+
+            for (int i = 1; i < n; i++) {
+                if (sum[heaviestLoad] < sum[i]) {
+                    heaviestLoad = i;
+                }
+                if (sum[lightestLoad] < sum[i]) {
+                    lightestLoad = i;
+                }
+            }
+
+            int[] heaviestPosition = newPositionsMatrix.get(heaviestLoad);
+            int[] lightestPosition = newPositionsMatrix.get(lightestLoad);
+
+            for (int i = 0; i < heaviestPosition.length; i++) {
+                int cloudletNumber = 0;
+
+                if (heaviestPosition[i] == 1) {
+                    cloudletNumber = 1;
+                }
+
+                double heaviestMinusCloudlet = sum[heaviestLoad] -
+                        heaviestPosition[cloudletNumber];
+                double lightestMinusCloudlet = sum[lightestLoad] -
+                        lightestPosition[cloudletNumber];
+
+                if (heaviestMinusCloudlet < lightestMinusCloudlet) {
+                    break;
+                }
+                else {
+                    heaviestPosition[cloudletNumber] = 0;
+                    lightestPosition[cloudletNumber] = 1;
+                    newPositionsMatrix.set(heaviestLoad, heaviestPosition);
+                    newPositionsMatrix.set(lightestLoad, lightestPosition);
+                }
+            }
+
+            if (counter == 3) {
+                done = true;
+            }
+
+            counter++;
+        }
+
+        return newPositionsMatrix;
+    }
+
+    /**
      * Calculate new velocities.
      *
      * @param w Inertia weight for the particle.
