@@ -382,7 +382,7 @@ public class BinaryPSO {
      * Run the particle swarm optimization algorithm. 
      *
      *  @return vmIds List of Vm ids to match cloudlets with. */
-    protected List<Integer> run() {
+    protected ArrayList<Integer> run() {
         List<Integer> vmIds = new ArrayList<Integer>();
         /* Initialize swarm with numParticles particles. */
         initSwarm(); 
