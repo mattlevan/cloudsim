@@ -262,11 +262,11 @@ public class BinaryPSO {
      */
     private ArrayList<int[]> calcInitPositions() {
         ArrayList<int[]> initPositions = new ArrayList<int[]>();
-        int[] assignedTasks = new int[n];
+        int[] assignedTasks = new int[m];
 
         /* Iterate through the VMs. */
         for (int i = 0; i < n; i++) {
-            int[] randomPositions = new int[n];
+            int[] randomPositions = new int[m];
 
             /* Iterate through the cloudlets. */
             for (int j = 0; j < m; j++) {
@@ -298,11 +298,11 @@ public class BinaryPSO {
      */
     private ArrayList<double[]> calcInitVelocities() {
         ArrayList<double[]> initVelocities = new ArrayList<double[]>();
-        int[] assignedTasks = new int[n];
+        int[] assignedTasks = new int[m];
 
         /* Iterate through the VMs. */
         for (int i = 0; i < n; i++) {
-            double[] randomPositions = new double[n];
+            double[] randomPositions = new double[m];
 
             /* Iterate through the cloudlets. */
             for (int j = 0; j < m; j++) {
@@ -463,7 +463,7 @@ public class BinaryPSO {
         for (int i = 0; i < p.velocity.size(); i++) {
             double[] vmVelocities = p.velocity.get(i);
             
-            int[] newPosition = new int[n];
+            int[] newPosition = new int[m];
 
             for (int j = 0; j < vmVelocities.length - 1; j++) {
                 p.r = random.nextInt(2);
@@ -588,7 +588,7 @@ public class BinaryPSO {
             int[] vmPositions = p.position.get(i);
             int[] vmGlobalBestPositions = globalBest.get(i);
             
-            double[] newVelocities = new double[n];
+            double[] newVelocities = new double[m];
 
             for (int j = 0; j < vmVelocities.length - 1; j++) {
                 p.r1 = random.nextInt(2);

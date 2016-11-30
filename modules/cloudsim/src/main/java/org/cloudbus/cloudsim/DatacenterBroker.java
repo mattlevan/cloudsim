@@ -395,8 +395,8 @@ public class DatacenterBroker extends SimEntity {
 	protected void submitCloudlets() {
 		BinaryPSO pso = new BinaryPSO(getVmsCreatedList(), getCloudletList(),
 		1000, 100, 0);
-        List<Integer> vmIds = pso.run();
-
+		List<Integer> vmIds;
+		vmIds = pso.run();
 		int vmIndex = vmIds.remove(0); // Get the first vmId in the vmIds list.
 		List<Cloudlet> successfullySubmitted = new ArrayList<Cloudlet>();
 		for (int i = 0; i < getCloudletList().size(); i++) {

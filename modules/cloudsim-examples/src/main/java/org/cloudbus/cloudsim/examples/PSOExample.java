@@ -104,18 +104,17 @@ public class PSOExample {
 			long length = 40000;
 			long fileSize = 300;
 			long outputSize = 300;
+			int numJobs = 4;
 			UtilizationModel utilizationModel = new UtilizationModelFull();
 
-			Cloudlet cloudlet1 = new Cloudlet(id, length, pesNumber, fileSize, outputSize, utilizationModel, utilizationModel, utilizationModel);
-			cloudlet1.setUserId(brokerId);
+			for (int i = 0; i < numJobs; i++) {
+			    Cloudlet cloudlet = new Cloudlet(id, length, pesNumber,
+                        fileSize, outputSize, utilizationModel,
+                        utilizationModel, utilizationModel);
 
-			id++;
-			Cloudlet cloudlet2 = new Cloudlet(id, length, pesNumber, fileSize, outputSize, utilizationModel, utilizationModel, utilizationModel);
-			cloudlet2.setUserId(brokerId);
-
-			//add the cloudlets to the list
-			cloudletList.add(cloudlet1);
-			cloudletList.add(cloudlet2);
+			    cloudlet.setUserId(brokerId);
+			    cloudletList.add(cloudlet);
+            }
 
 			//submit cloudlet list to the broker
 			broker.submitCloudletList(cloudletList);
@@ -123,8 +122,8 @@ public class PSOExample {
 
 			//bind the cloudlets to the vms. This way, the broker
 			// will submit the bound cloudlets only to the specific VM
-			broker.bindCloudletToVm(cloudlet1.getCloudletId(),vm1.getId());
-			broker.bindCloudletToVm(cloudlet2.getCloudletId(),vm2.getId());
+			// broker.bindCloudletToVm(cloudlet1.getCloudletId(), vm1.getId());
+			// broker.bindCloudletToVm(cloudlet2.getCloudletId(), vm2.getId());
 
 			// Sixth step: Starts the simulation
 			CloudSim.startSimulation();
