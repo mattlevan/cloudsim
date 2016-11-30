@@ -104,7 +104,7 @@ public class PSOExample {
 			long length = 40000;
 			long fileSize = 300;
 			long outputSize = 300;
-			int numJobs = 4;
+			int numJobs = 50;
 			UtilizationModel utilizationModel = new UtilizationModelFull();
 
 			for (int i = 0; i < numJobs; i++) {
