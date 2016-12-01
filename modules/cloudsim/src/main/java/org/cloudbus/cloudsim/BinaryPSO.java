@@ -273,8 +273,9 @@ public class BinaryPSO {
                 if (assignedTasks[j] == 0) {
                     randomPositions[j] = random.nextInt(2);
 
-                    if (randomPositions[j] == 1)
+                    if (randomPositions[j] == 1) {
                         assignedTasks[j] = 1;
+                    }
                 }
                 else {
                     randomPositions[j] = 0;
@@ -378,6 +379,21 @@ public class BinaryPSO {
         }
     }
 
+    /**
+     * Prints a 2-dimensional matrix.
+     *
+     * @param matrix Matrix to print.
+     */
+    private void printMatrix(ArrayList<int[]> matrix) {
+        for (int i = 0; i < matrix.size(); i++) {
+            for (int j = 0; j < matrix.get(i).length; j++) {
+                System.out.print(matrix.get(i)[j]);
+            }
+
+            System.out.println();
+        }
+    }
+
     /** 
      * Run the particle swarm optimization algorithm. 
      *
@@ -385,7 +401,7 @@ public class BinaryPSO {
     protected ArrayList<Integer> run() {
         List<Integer> vmIds = new ArrayList<Integer>();
         /* Initialize swarm with numParticles particles. */
-        initSwarm(); 
+        initSwarm();
 
         for (int i = 0; i < numIterations; i++) {
             for (int j = 0; j < numParticles; j++) {
@@ -436,15 +452,16 @@ public class BinaryPSO {
     private ArrayList<Integer> getCloudletPositions(ArrayList<int[]> globalBest) {
         Integer[] cloudletPositions = new Integer[m];
 
+        /* For each VM. */
         for (int i = 0; i < n; i++) {
-            int[] vm = globalBest.get(i);
-
             for (int j = 0; j < m; j++) {
-                if (vm[j] == 1) {
-                    cloudletPositions[i] = j;
+                if (globalBest.get(i)[j] == 1) {
+                    cloudletPositions[j] = i;
                 }
             }
         }
+
+        // System.out.println(Arrays.toString(cloudletPositions));
 
         return new ArrayList<Integer>(Arrays.asList(cloudletPositions));
     }
@@ -460,11 +477,13 @@ public class BinaryPSO {
         ArrayList<int[]> newPositionsMatrix = new ArrayList<int[]>();
         int[] assignedTasksArrayInPositionsMatrix = new int[m];
 
+        /* For each VM. */
         for (int i = 0; i < p.velocity.size(); i++) {
             double[] vmVelocities = p.velocity.get(i);
             
             int[] newPosition = new int[m];
 
+            /* For each cloudlet. */
             for (int j = 0; j < vmVelocities.length - 1; j++) {
                 p.r = random.nextInt(2);
                 

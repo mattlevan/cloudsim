@@ -397,6 +397,7 @@ public class DatacenterBroker extends SimEntity {
 		1000, 100, 0);
 		List<Integer> vmIds;
 		vmIds = pso.run();
+		// System.out.println("VM IDs:" + vmIds);
 		int vmIndex = vmIds.get(0); // Get the first vmId in the vmIds list.
 		List<Cloudlet> successfullySubmitted = new ArrayList<Cloudlet>();
 		for (int i = 0; i < getCloudletList().size(); i++) {
@@ -405,7 +406,7 @@ public class DatacenterBroker extends SimEntity {
 			// if user didn't bind this cloudlet and it has not been executed yet
 			if (cloudlet.getVmId() == -1) {
 				// TODO: Fix this.. it always submits to the first Vm.
-				vm = getVmsCreatedList().get(0);
+				vm = vmsCreatedList.get(vmIds.get(i));
 			} else { // submit to the specific vm
 				vm = VmList.getById(getVmsCreatedList(), cloudlet.getVmId());
 				if (vm == null) { // vm was not created
@@ -426,7 +427,7 @@ public class DatacenterBroker extends SimEntity {
 			cloudlet.setVmId(vm.getId());
 			sendNow(getVmsToDatacentersMap().get(vm.getId()), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
 			cloudletsSubmitted++;
-			vmIndex = (vmIndex + 1) % getVmsCreatedList().size();
+			// vmIndex = (vmIndex + 1) % getVmsCreatedList().size();
 			getCloudletSubmittedList().add(cloudlet);
 			successfullySubmitted.add(cloudlet);
 		}

@@ -74,23 +74,20 @@ public class PSOExample {
 
 			//VM description
 			int vmid = 0;
-			int mips = 250;
+			int mips = 128;
 			long size = 10000; //image size (MB)
-			int ram = 2048; //vm memory (MB)
+			int ram = 512; //vm memory (MB)
 			long bw = 1000;
 			int pesNumber = 1; //number of cpus
+			int numVms = 10; //number of vms
 			String vmm = "Xen"; //VMM name
 
-			//create two VMs
-			Vm vm1 = new Vm(vmid, brokerId, mips, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
+			for (int i = 0; i < numVms; i++) {
+				Vm vm = new Vm(i, brokerId, mips, pesNumber, ram, bw,
+						size, vmm, new CloudletSchedulerTimeShared());
 
-			//the second VM will have twice the priority of VM1 and so will receive twice CPU time
-			vmid++;
-			Vm vm2 = new Vm(vmid, brokerId, mips * 2, pesNumber, ram, bw, size, vmm, new CloudletSchedulerTimeShared());
-
-			//add the VMs to the vmList
-			vmlist.add(vm1);
-			vmlist.add(vm2);
+				vmlist.add(vm);
+			}
 
 			//submit vm list to the broker
 			broker.submitVmList(vmlist);
@@ -100,15 +97,14 @@ public class PSOExample {
 			cloudletList = new ArrayList<Cloudlet>();
 
 			//Cloudlet properties
-			int id = 0;
 			long length = 40000;
 			long fileSize = 300;
 			long outputSize = 300;
-			int numJobs = 50;
+			int numJobs = 100;
 			UtilizationModel utilizationModel = new UtilizationModelFull();
 
 			for (int i = 0; i < numJobs; i++) {
-			    Cloudlet cloudlet = new Cloudlet(id, length, pesNumber,
+			    Cloudlet cloudlet = new Cloudlet(i, length, pesNumber,
                         fileSize, outputSize, utilizationModel,
                         utilizationModel, utilizationModel);
 
@@ -118,12 +114,6 @@ public class PSOExample {
 
 			//submit cloudlet list to the broker
 			broker.submitCloudletList(cloudletList);
-
-
-			//bind the cloudlets to the vms. This way, the broker
-			// will submit the bound cloudlets only to the specific VM
-			// broker.bindCloudletToVm(cloudlet1.getCloudletId(), vm1.getId());
-			// broker.bindCloudletToVm(cloudlet2.getCloudletId(), vm2.getId());
 
 			// Sixth step: Starts the simulation
 			CloudSim.startSimulation();
@@ -162,7 +152,7 @@ public class PSOExample {
 
 		//4. Create Hosts with its id and list of PEs and add them to the list of machines
 		int hostId=0;
-		int ram = 2048; //host memory (MB)
+		int ram = 99999999; //host memory (MB)
 		long storage = 1000000; //host storage
 		int bw = 10000;
 
