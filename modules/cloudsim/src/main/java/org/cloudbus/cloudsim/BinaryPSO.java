@@ -12,20 +12,40 @@ package org.cloudbus.cloudsim;
 import java.util.*;
 
 /**
- * BinaryPSO implements the popular population-based metaheuristic algorithm 
+ * BinaryPSO implements the popular population-based metaheuristic algorithm
  * for scheduling cloudlets on VMs.
- * 
+ *
  * @author Amlan Chatterjee, Crosby Lanham, Matt Levan, Mishael Zerrudo
  */
 public class BinaryPSO {
+    /** Cognitive constant. */
+    private final double c1;
+
+    /** Social constant. */
+    private final double c2;
+
+    /** Uniform rand number. */
+    private final double r;
+
+    /** Number of iterations. */
+    private final int numIterations;
+
+    /** Number of particles. */
+    private final int numParticles;
+
+    /** Inertia calculation technique choice. */
+    private final int inertiaTechnique;
+
     /** List of Vms for submission to cloud resources. */
     private List<Vm> vmList;
-    
+
     /** List of cloudlets for submission to cloud resources. */
     private List<Cloudlet> cloudletList;
 
-    /** Particle swarm for evaluating resources and finding a Vm
-     * solution for each cloudlet. */
+    /**
+     * Particle swarm for evaluating resources and finding a Vm
+     * solution for each cloudlet.
+     */
     private List<Particle> swarm;
 
     /** List of all possible solutions. */
@@ -49,26 +69,8 @@ public class BinaryPSO {
     /** Number of cloudlets. */
     private int m;
 
-    /** Cognitive constant. */
-    private final double c1;
-
-    /** Social constant. */
-    private final double c2;
-
-    /** Uniform random number. */
-    private final double r;
-
     /** Random Object. */
-    private Random random;
-
-    /** Number of iterations. */
-    private final int numIterations;
-
-    /** Number of particles. */
-    private final int numParticles;
-
-    /** Inertia calculation technique choice. */
-    private final int inertiaTechnique;
+    private Random rand;
 
     /** Fixed inertia weight. */
     private double fixedInertiaWeight = 0.5;
@@ -76,24 +78,24 @@ public class BinaryPSO {
     /** Solution counter for use in the calcSolutions method. */
     private int iteration = 0;
 
-    
+
     /**
      * Constructor accepts a list of Vms and cloudlets.
      *
-     * @param vmList List of Vms Objects for consideration.
-     * @param cloudletList List of cloudlet jobs to be run.
-     * @param numIterations Number of iterations.
-     * @param numParticles Number of particles.
-     * @param inertiaTechnique Integer to specify which technique to use for 
-     * calculating the inertia:
-     * <ol start="0">
-     *  <li>Fixed Inertia Weight (FIW)</li>
-     *  <li>Random Inertia Weight (RIW)</li>
-     *  <li>Linearly Decreasing Inertia Weight (LDIW)</li>
-     *  <li>Combination</li>
-     * </ol>
+     * @param vmList           List of Vms Objects for consideration.
+     * @param cloudletList     List of cloudlet jobs to be run.
+     * @param numIterations    Number of iterations.
+     * @param numParticles     Number of particles.
+     * @param inertiaTechnique Integer to specify which technique to use for
+     *                         calculating the inertia:
+     *                         <ol start="0">
+     *                         <li>Fixed Inertia Weight (FIW)</li>
+     *                         <li>Random Inertia Weight (RIW)</li>
+     *                         <li>Linearly Decreasing Inertia Weight (LDIW)</li>
+     *                         <li>Combination</li>
+     *                         </ol>
      */
-    public BinaryPSO(List<Vm> vmList, List<Cloudlet> cloudletList, 
+    public BinaryPSO(List<Vm> vmList, List<Cloudlet> cloudletList,
                      int numIterations, int numParticles, int inertiaTechnique) {
         this.vmList = vmList;
         this.cloudletList = cloudletList;
@@ -107,60 +109,27 @@ public class BinaryPSO {
         this.globalBest = new ArrayList<int[]>();
         c1 = 1.49445; // Initialize cognitive constant.
         c2 = 1.49445; // Initialize social constants.
-        random = new Random();
-        r = random.nextDouble(); // Initialize random number.
+        rand = new Random();
+        r = rand.nextDouble(); // Initialize rand number.
     }
 
     /**
-     * The inertia weight w can be calculated with a variety of techniques:
-     *
-     * TODO:    Implement RIW, LDIW, and combination techniques.
-     * @param   numIterations Number of iterations.
-     * @param   numParticles Number of individual particles.
-     * @return  The global inertia value w.
-     */
-    private double calcInertia(int numIterations, int numParticles,
-                                    ArrayList<double[]> averageFitnesses) {
-        double w = 0;
-        switch (inertiaTechnique) {
-            /* Fixed Inertia Weight (FIW). */
-            case 0: 
-                w = fixedInertiaWeight;
-                break;
-            /* Random Inertia Weight (RIW). */
-            case 1: 
-                break;
-            /* Linearly Reducing Inertia Weight (LDIW). */
-            case 2: 
-                break;
-            /* Combination. */
-            case 3: 
-                break;
-            default:
-                break;
-        }
-
-        return w;
-    }
-
-    /**
-     * Fitness for a single PSO particle. 
-     *
-     * The fitness function calculates the execution times of all possible 
-     * cloudlet combinations on every cloud resource and then returns the 
-     * highest execution time as the fitness value of the particle, where 
-     * exc(Vm vm, List<Cloudlet> cloudletList) is the execution time of 
+     * Fitness for a single PSO particle.
+     * <p>
+     * The fitness function calculates the execution times of all possible
+     * cloudlet combinations on every cloud resource and then returns the
+     * highest execution time as the fitness value of the particle, where
+     * exc(Vm vm, List<Cloudlet> cloudletList) is the execution time of
      * running the cloudletList on vm.
      *
-     * @param runTime The runtime matrix.
+     * @param runTime   The runtime matrix.
      * @param positions The positions matrix.
-     *
      * @return The double fitness value.
      */
     private double calcFitness(ArrayList<double[]> runTime,
-            ArrayList<int[]> positions) {
+                               ArrayList<int[]> positions) {
         double[] sum = new double[n];
-        
+
         for (int i = 0; i < n; i++) {
             double[] time = runTime.get(i);
             int[] pos = positions.get(i);
@@ -182,77 +151,92 @@ public class BinaryPSO {
         return result;
     }
 
-    /** 
-     * Initialize the swarm with numParticles particles. 
-     * 
-     * @TODO: Write code to initialize first position, velocity matrices,
-     * and fitness and use those values to instantiate all particles in 
-     * the swarm.
-     */
-    private void initSwarm() {
-        swarm = new ArrayList<Particle>();
-        runTime = calcRunTime();
-
-        /* Initialize each particle in the swarm. */
-        for (int i = 0; i < numParticles; i++) {
-            /* Calculate the initial positions matrix. */
-            ArrayList<int[]> positions = calcInitPositions();
-
-            /* Calculate the initial velocities matrix. */
-            ArrayList<double[]> velocities = calcInitVelocities();
-
-            /* Calculate the initial fitness value. */
-            double fitness = calcFitness(runTime, positions);
-
-            swarm.add(new Particle(positions, fitness, velocities, positions, 
-                        fitness));
-
-            /* Initialize global best fitness value. */
-            if (swarm.get(i).fitness < globalBestFitness) {
-                globalBestFitness = swarm.get(i).fitness;
-                globalBest = swarm.get(i).position;
-            }
-        }
-
-        initAverageFitnesses();
-    }
-
     /**
-     * Instantiate average fitness matrix. 
+     * The inertia weight w can be calculated with a variety of techniques.
+     *
+     * @param particleNumber   Particle number.
+     * @param averageFitnesses Average particle fitnesses matrix.
+     * @return The global inertia value w.
      */
-    private void initAverageFitnesses() {
-        averageFitnesses = new ArrayList<double[]>();
+    private double calcInertia(int particleNumber,
+                               ArrayList<double[]> averageFitnesses) {
+        int k = 5;
+        double w = 0.0;
 
-        for (int i = 0; i < numParticles; i++) {
-            averageFitnesses.add(new double[numIterations]);
-        }
-    }
+        double w_max = 0.9;
+        double w_min = 0.1;
 
-    /**
-     * Calculate the runtime, which is the execution time of each cloudlet on 
-     * each VM, separately.
-     */
-    private ArrayList<double[]> calcRunTime() {
-        ArrayList<double[]> runTime = new ArrayList<double[]>();
+        double t_max = numIterations;
+        double t = iteration;
 
-        /* Iterate through all the VMs. */
-        for (int i = 0; i < n; i++) {
-            Vm vm = vmList.get(i);
+        if (t % k == 0 && t != 0) {
+            double p = 0.0; // Annealing probability.
 
-            /* Execution times of running cloudlet j on VM i. */
-            double[] times = new double[m]; 
+            double currentFitness =
+                    averageFitnesses.get(particleNumber)[iteration];
+            double previousFitness =
+                    averageFitnesses.get(particleNumber)[iteration - k];
 
-            /* Iterate through all the cloudlets. */
-            for (int j = 0; j < m; j++) {
-                Cloudlet cloudlet = cloudletList.get(j);
-                times[j] = (double) cloudlet.getCloudletLength() / 
-                    vm.getHost().getTotalAllocatedMipsForVm(vm);
+            if (previousFitness <= currentFitness) {
+                p = 1;
+            } else {
+                /* Annealing temperature. */
+                double coolingTemp_Tt = 0.0;
+
+                Particle currParticle = swarm.get(particleNumber);
+                double bestFitness = currParticle.bestFitness;
+
+                double particleFitnessAverage = 0;
+
+                int counter = 0;
+                for (int i = 0; i < iteration; i++) {
+                    if (averageFitnesses.get(particleNumber)[i] > 0) {
+                        particleFitnessAverage +=
+                                averageFitnesses.get(particleNumber)[i];
+                        counter++;
+                    }
+                }
+
+                particleFitnessAverage = particleFitnessAverage / counter;
+                coolingTemp_Tt = particleFitnessAverage / bestFitness - 1;
+                p = Math.exp(-(previousFitness - currentFitness) / coolingTemp_Tt);
             }
 
-            runTime.add(times);
+            int random = rand.nextInt(2);
+
+            /* New inertia weight. */
+            if (p >= random) {
+                w = random / 2 + 1;
+            } else {
+                w = random / 2;
+            }
+        } else {
+            /* New inertia weight using LDIW. */
+            double w_fraction = (w_max - w_min) * (t_max - t) / t_max;
+            w = w_max - w_fraction;
         }
 
-        return runTime;
+        switch (inertiaTechnique) {
+            /* Fixed Inertia Weight (FIW). */
+            case 0:
+                w = fixedInertiaWeight;
+                break;
+            /* Random Inertia Weight (RIW). */
+            case 1:
+                w = randomInertiaWeight(particleNumber, averageFitnesses);
+                break;
+            /* Linearly Reducing Inertia Weight (LDIW). */
+            case 2:
+                w = linearlyDecreasingInertiaWeight(particleNumber,
+                        averageFitnesses);
+                break;
+            /* Combination. */
+            case 3:
+                w = combinationInertiaWeight(particleNumber, averageFitnesses);
+                break;
+        }
+
+        return w;
     }
 
     /**
@@ -271,13 +255,12 @@ public class BinaryPSO {
             /* Iterate through the cloudlets. */
             for (int j = 0; j < m; j++) {
                 if (assignedTasks[j] == 0) {
-                    randomPositions[j] = random.nextInt(2);
+                    randomPositions[j] = rand.nextInt(2);
 
                     if (randomPositions[j] == 1) {
                         assignedTasks[j] = 1;
                     }
-                }
-                else {
+                } else {
                     randomPositions[j] = 0;
                 }
             }
@@ -286,7 +269,7 @@ public class BinaryPSO {
         }
 
         /* Ensure that all jobs have been assigned to at least one VM. */
-        ArrayList<int[]> newPositions = ensureCompleteAssignment(initPositions, 
+        ArrayList<int[]> newPositions = ensureCompleteAssignment(initPositions,
                 assignedTasks);
 
         return newPositions;
@@ -308,12 +291,11 @@ public class BinaryPSO {
             /* Iterate through the cloudlets. */
             for (int j = 0; j < m; j++) {
                 if (assignedTasks[j] == 0) {
-                    randomPositions[j] = random.nextInt(2);
+                    randomPositions[j] = rand.nextInt(2);
 
                     if (randomPositions[j] == 1)
                         assignedTasks[j] = 1;
-                }
-                else {
+                } else {
                     randomPositions[j] = 0;
                 }
             }
@@ -325,7 +307,197 @@ public class BinaryPSO {
     }
 
     /**
-     * Ensure that all jobs are assigned to at least one VM in the given 
+     * Calculate new positions.
+     *
+     * @param w Inertia weight for the particle.
+     * @param p Particle.
+     */
+    private void calcNewPositions(double w, Particle p) {
+        ArrayList<int[]> newPositionsMatrix = new ArrayList<int[]>();
+        int[] assignedTasksArrayInPositionsMatrix = new int[m];
+
+        /* For each VM. */
+        for (int i = 0; i < p.velocity.size(); i++) {
+            double[] vmVelocities = p.velocity.get(i);
+
+            int[] newPosition = new int[m];
+
+            /* For each cloudlet. */
+            for (int j = 0; j < vmVelocities.length - 1; j++) {
+                p.r = rand.nextInt(2);
+
+                if (assignedTasksArrayInPositionsMatrix[j] == 0) {
+                    double s = s(vmVelocities[j]);
+
+                    if (s > p.r) {
+                        newPosition[j] = 1;
+                    } else {
+                        newPosition[j] = 0;
+                    }
+
+                    if (newPosition[j] == 1) {
+                        assignedTasksArrayInPositionsMatrix[j] = 1;
+                    }
+                } else {
+                    newPosition[j] = 0;
+                }
+            }
+
+            /* Add new velocities to the ArrayList. */
+            newPositionsMatrix.add(newPosition);
+        }
+
+        /* Update the particle's position. */
+        newPositionsMatrix = ensureCompleteAssignment(newPositionsMatrix,
+                assignedTasksArrayInPositionsMatrix);
+        newPositionsMatrix = rebalancePSO(newPositionsMatrix, runTime);
+        p.position = newPositionsMatrix;
+    }
+
+    /**
+     * Calculate new velocities.
+     *
+     * @param w Inertia weight for the particle.
+     * @param p Particle.
+     */
+    private void calcNewVelocities(double w, Particle p) {
+        ArrayList<double[]> newVelocitiesMatrix = new ArrayList<double[]>();
+        int[] assignedTasksArrayInVelocityMatrix = new int[m];
+
+        for (int i = 0; i < p.velocity.size(); i++) {
+            double[] vmVelocities = p.velocity.get(i);
+            int[] vmBestPositions = p.bestPosition.get(i);
+            int[] vmPositions = p.position.get(i);
+            int[] vmGlobalBestPositions = globalBest.get(i);
+
+            double[] newVelocities = new double[m];
+
+            for (int j = 0; j < vmVelocities.length - 1; j++) {
+                p.r1 = rand.nextInt(2);
+                p.r2 = rand.nextInt(2);
+
+                if (assignedTasksArrayInVelocityMatrix[j] == 0) {
+                    /* Velocity vector. */
+                    newVelocities[j] = w * vmVelocities[j + 1] + c1 * p.r1 *
+                            (vmBestPositions[j] - vmPositions[j] + c2 * p.r2 *
+                                    (vmGlobalBestPositions[j] - vmPositions[j]));
+
+                    /* Formula 4. */
+                    if (newVelocities[j] < 0) {
+                        newVelocities[j] = 0;
+                    } else if (newVelocities[j] > 1) {
+                        newVelocities[j] = 1;
+                    }
+                } else {
+                    newVelocities[j] = 0;
+                }
+            }
+
+            /* Add new velocities to the ArrayList. */
+            newVelocitiesMatrix.add(newVelocities);
+        }
+
+        /* Update the particle's velocity. */
+        p.velocity = newVelocitiesMatrix;
+    }
+
+    /**
+     * Calculate the runtime, which is the execution time of each cloudlet on
+     * each VM, separately.
+     */
+    private ArrayList<double[]> calcRunTime() {
+        ArrayList<double[]> runTime = new ArrayList<double[]>();
+
+        /* Iterate through all the VMs. */
+        for (int i = 0; i < n; i++) {
+            Vm vm = vmList.get(i);
+
+            /* Execution times of running cloudlet j on VM i. */
+            double[] times = new double[m];
+
+            /* Iterate through all the cloudlets. */
+            for (int j = 0; j < m; j++) {
+                Cloudlet cloudlet = cloudletList.get(j);
+                times[j] = (double) cloudlet.getCloudletLength() /
+                        vm.getHost().getTotalAllocatedMipsForVm(vm);
+            }
+
+            runTime.add(times);
+        }
+
+        return runTime;
+    }
+
+    /**
+     * Calculates the inertia weight using the combination technique.
+     *
+     * @param particleNumber   Particle number.
+     * @param averageFitnesses Average particle fitnesses matrix.
+     * @return The global inertia value w.
+     */
+    private double combinationInertiaWeight(int particleNumber,
+                               ArrayList<double[]> averageFitnesses) {
+        int k = 5;
+        double w;
+
+        double w_max = 0.9;
+        double w_min = 0.1;
+
+        double t_max = numIterations;
+        double t = iteration;
+
+        if (t % k == 0 && t != 0) {
+            double p; // Annealing probability.
+
+            double currentFitness =
+                    averageFitnesses.get(particleNumber)[iteration];
+            double previousFitness =
+                    averageFitnesses.get(particleNumber)[iteration - k];
+
+            if (previousFitness <= currentFitness) {
+                p = 1;
+            } else {
+                /* Annealing temperature. */
+                double coolingTemp_Tt = 0.0;
+
+                Particle currParticle = swarm.get(particleNumber);
+                double bestFitness = currParticle.bestFitness;
+
+                double particleFitnessAverage = 0;
+
+                int counter = 0;
+                for (int i = 0; i < iteration; i++) {
+                    if (averageFitnesses.get(particleNumber)[i] > 0) {
+                        particleFitnessAverage +=
+                                averageFitnesses.get(particleNumber)[i];
+                        counter++;
+                    }
+                }
+
+                particleFitnessAverage = particleFitnessAverage / counter;
+                coolingTemp_Tt = particleFitnessAverage / bestFitness - 1;
+                p = Math.exp(-(previousFitness - currentFitness) / coolingTemp_Tt);
+            }
+
+            int random = rand.nextInt(2);
+
+            /* New inertia weight. */
+            if (p >= random) {
+                w = random / 2 + 1;
+            } else {
+                w = random / 2;
+            }
+        } else {
+            /* New inertia weight using LDIW. */
+            double w_fraction = (w_max - w_min) * (t_max - t) / t_max;
+            w = w_max - w_fraction;
+        }
+
+        return w;
+    }
+
+    /**
+     * Ensure that all jobs are assigned to at least one VM in the given
      * positions matrix.
      *
      * @param initPositions The positions matrix to be checked for completeness.
@@ -339,8 +511,8 @@ public class BinaryPSO {
         /* Check if task is not yet assigned. */
         for (int i = 0; i < assignedTasks.length; i++) {
             if (assignedTasks[i] == 0) {
-                /* Pick a random VM index. */
-                int x = random.nextInt(n);
+                /* Pick a rand VM index. */
+                int x = rand.nextInt(n);
 
                 int[] positions = newPositions.get(x);
                 positions[i] = 1;
@@ -356,13 +528,13 @@ public class BinaryPSO {
      * Evaluate a given solution and update the particle and global bests if
      * necessary.
      *
-     * @param newFitness The current particle's fitness.
+     * @param newFitness      The current particle's fitness.
      * @param currentPosition The current particle's position.
      * @param currentParticle The current particle.
      */
     private void evaluateSolution(double newFitness,
-                                    ArrayList<int[]> currentPosition,
-                                    Particle currentParticle) {
+                                  ArrayList<int[]> currentPosition,
+                                  Particle currentParticle) {
         /* If the newFitness is better than the current particle's fitness... */
         if (newFitness < currentParticle.fitness) {
             /* Update the particle's fitness. */
@@ -377,69 +549,6 @@ public class BinaryPSO {
             globalBestFitness = newFitness;
             globalBest = currentPosition;
         }
-    }
-
-    /**
-     * Prints a 2-dimensional matrix.
-     *
-     * @param matrix Matrix to print.
-     */
-    private void printMatrix(ArrayList<int[]> matrix) {
-        for (int i = 0; i < matrix.size(); i++) {
-            for (int j = 0; j < matrix.get(i).length; j++) {
-                System.out.print(matrix.get(i)[j]);
-            }
-
-            System.out.println();
-        }
-    }
-
-    /** 
-     * Run the particle swarm optimization algorithm. 
-     *
-     *  @return vmIds List of Vm ids to match cloudlets with. */
-    protected ArrayList<Integer> run() {
-        List<Integer> vmIds = new ArrayList<Integer>();
-        /* Initialize swarm with numParticles particles. */
-        initSwarm();
-
-        for (int i = 0; i < numIterations; i++) {
-            for (int j = 0; j < numParticles; j++) {
-                /* Get current particle and attributes from swarm. */
-                Particle currentParticle = swarm.get(j);
-                // ArrayList<double[]> currentVelocity = currentParticle.velocity;
-                ArrayList<int[]> currentPosition = currentParticle.position;
-
-                /* Calculate inertia value. */
-                double w = calcInertia(j, i, averageFitnesses);
-
-                /* Calculate new velocities. */
-                calcNewVelocities(w, currentParticle);
-
-                /* Calculate new positions. */
-                calcNewPositions(w, currentParticle);
-
-                /* Calculate the fitness.
-                 *
-                 * @TODO: Modify calcFitness() to return void and take the
-                 * particle as a parameter, updating the particle's fitness
-                 * within the method itself.
-                 */
-                double newFitness = calcFitness(runTime, currentPosition);
-                currentParticle.fitness = newFitness;
-
-                /* Evaluate the solution and update the current particle and
-                 * global bests if appropriate. */
-                evaluateSolution(newFitness, currentPosition, currentParticle);
-
-                /* Add the new fitness to the averageFitnesses array. */
-                double[] fitnessArray = averageFitnesses.get(j);
-                fitnessArray[i] = newFitness;
-                averageFitnesses.set(j, fitnessArray);
-            }
-        }
-        
-        return getCloudletPositions(globalBest);
     }
 
     /**
@@ -467,61 +576,151 @@ public class BinaryPSO {
     }
 
     /**
-     * Calculate new positions.
-     *
-     * @param w Inertia weight for the particle.
-     * @param p Particle.
-     *
+     * Instantiate average fitness matrix.
      */
-    private void calcNewPositions(double w, Particle p) {
-        ArrayList<int[]> newPositionsMatrix = new ArrayList<int[]>();
-        int[] assignedTasksArrayInPositionsMatrix = new int[m];
+    private void initAverageFitnesses() {
+        averageFitnesses = new ArrayList<double[]>();
 
-        /* For each VM. */
-        for (int i = 0; i < p.velocity.size(); i++) {
-            double[] vmVelocities = p.velocity.get(i);
-            
-            int[] newPosition = new int[m];
+        for (int i = 0; i < numParticles; i++) {
+            averageFitnesses.add(new double[numIterations]);
+        }
+    }
 
-            /* For each cloudlet. */
-            for (int j = 0; j < vmVelocities.length - 1; j++) {
-                p.r = random.nextInt(2);
-                
-                if (assignedTasksArrayInPositionsMatrix[j] == 0) {
-                    double s = s(vmVelocities[j]);
+    /**
+     * Initialize the swarm with numParticles particles.
+     *
+     * @TODO: Write code to initialize first position, velocity matrices,
+     * and fitness and use those values to instantiate all particles in
+     * the swarm.
+     */
+    private void initSwarm() {
+        swarm = new ArrayList<Particle>();
+        runTime = calcRunTime();
 
-                    if (s > p.r) {
-                        newPosition[j] = 1;
-                    }
-                    else {
-                        newPosition[j] = 0;
-                    }
-                    
-                    if (newPosition[j] == 1) {
-                        assignedTasksArrayInPositionsMatrix[j] = 1;
-                    }
-                }
-                else {
-                    newPosition[j] = 0;
+        /* Initialize each particle in the swarm. */
+        for (int i = 0; i < numParticles; i++) {
+            /* Calculate the initial positions matrix. */
+            ArrayList<int[]> positions = calcInitPositions();
+
+            /* Calculate the initial velocities matrix. */
+            ArrayList<double[]> velocities = calcInitVelocities();
+
+            /* Calculate the initial fitness value. */
+            double fitness = calcFitness(runTime, positions);
+
+            swarm.add(new Particle(positions, fitness, velocities, positions,
+                    fitness));
+
+            /* Initialize global best fitness value. */
+            if (swarm.get(i).fitness < globalBestFitness) {
+                globalBestFitness = swarm.get(i).fitness;
+                globalBest = swarm.get(i).position;
+            }
+        }
+
+        initAverageFitnesses();
+    }
+
+    /**
+     * The inertia weight w can be calculated with a variety of techniques:
+     * <p>
+     * TODO:    Implement RIW, LDIW, and combination techniques.
+     *
+     * @param particleNumber   Particle number.
+     * @param averageFitnesses Average particle fitnesses matrix.
+     * @return The global inertia value w.
+     */
+    private double linearlyDecreasingInertiaWeight(int particleNumber,
+                               ArrayList<double[]> averageFitnesses) {
+        double w_max = 0.9;
+        double w_min = 0.1;
+
+        double t_max = numIterations;
+        double t = iteration;
+
+        /* New inertia weight using LDIW. */
+        double w_fraction = (w_max - w_min) * (t_max - t) / t_max;
+        double w = w_max - w_fraction;
+
+        return w;
+    }
+
+    /**
+     * Prints a 2-dimensional matrix.
+     *
+     * @param matrix Matrix to print.
+     */
+    private void printMatrix(ArrayList<int[]> matrix) {
+        for (int i = 0; i < matrix.size(); i++) {
+            for (int j = 0; j < matrix.get(i).length; j++) {
+                System.out.print(matrix.get(i)[j]);
+            }
+
+            System.out.println();
+        }
+    }
+
+    /**
+     * Calculates a random inertia weight.
+     *
+     * @param particleNumber   Particle number.
+     * @param averageFitnesses Average particle fitnesses matrix.
+     * @return The global inertia value w.
+     */
+    private double randomInertiaWeight(int particleNumber,
+                               ArrayList<double[]> averageFitnesses) {
+        int k = 5;
+        double w;
+
+        double p; // Annealing probability.
+
+        double currentFitness =
+                averageFitnesses.get(particleNumber)[iteration];
+        double previousFitness =
+                averageFitnesses.get(particleNumber)[iteration - k];
+
+        if (previousFitness <= currentFitness) {
+            p = 1;
+        } else {
+            /* Annealing temperature. */
+            double coolingTemp_Tt;
+
+            Particle currParticle = swarm.get(particleNumber);
+            double bestFitness = currParticle.bestFitness;
+
+            double particleFitnessAverage = 0;
+
+            int counter = 0;
+            for (int i = 0; i < iteration; i++) {
+                if (averageFitnesses.get(particleNumber)[i] > 0) {
+                    particleFitnessAverage +=
+                            averageFitnesses.get(particleNumber)[i];
+                    counter++;
                 }
             }
 
-            /* Add new velocities to the ArrayList. */
-            newPositionsMatrix.add(newPosition);
+            particleFitnessAverage = particleFitnessAverage / counter;
+            coolingTemp_Tt = particleFitnessAverage / bestFitness - 1;
+            p = Math.exp(-(previousFitness - currentFitness) / coolingTemp_Tt);
         }
 
-        /* Update the particle's position. */
-        newPositionsMatrix = ensureCompleteAssignment(newPositionsMatrix, 
-                assignedTasksArrayInPositionsMatrix);
-        newPositionsMatrix = rebalancePSO(newPositionsMatrix, runTime);
-        p.position = newPositionsMatrix;
+        int random = rand.nextInt(2);
+
+        /* New inertia weight. */
+        if (p >= random) {
+            w = random / 2.0 + 1;
+        } else {
+            w = random / 2.0;
+        }
+
+        return w;
     }
 
     /**
      * Rebalances the solution found by PSO for better solutions.
      *
      * @param newPositionsMatrix Positions matrix.
-     * @param runTime The run time matrix.
+     * @param runTime            The run time matrix.
      * @return Rebalanced positions matrix.
      */
     private ArrayList<int[]> rebalancePSO(ArrayList<int[]> newPositionsMatrix,
@@ -530,7 +729,7 @@ public class BinaryPSO {
         int counter = 0;
 
         while (!done) {
-            double [] sum = new double[n];
+            double[] sum = new double[n];
 
             for (int i = 0; i < n; i++) {
                 double[] time = runTime.get(i);
@@ -572,8 +771,7 @@ public class BinaryPSO {
 
                 if (heaviestMinusCloudlet < lightestMinusCloudlet) {
                     break;
-                }
-                else {
+                } else {
                     heaviestPosition[cloudletNumber] = 0;
                     lightestPosition[cloudletNumber] = 1;
                     newPositionsMatrix.set(heaviestLoad, heaviestPosition);
@@ -592,55 +790,66 @@ public class BinaryPSO {
     }
 
     /**
-     * Calculate new velocities.
+     * Run the particle swarm optimization algorithm.
      *
-     * @param w Inertia weight for the particle.
-     * @param p Particle.
+     * @return vmIds List of Vm ids to match cloudlets with.
      */
-    private void calcNewVelocities(double w, Particle p) {
-        ArrayList<double[]> newVelocitiesMatrix = new ArrayList<double[]>();
-        int[] assignedTasksArrayInVelocityMatrix = new int[m];
+    protected ArrayList<Integer> run() {
+        List<Integer> vmIds = new ArrayList<Integer>();
+        /* Initialize swarm with numParticles particles. */
+        initSwarm();
 
-        for (int i = 0; i < p.velocity.size(); i++) {
-            double[] vmVelocities = p.velocity.get(i);
-            int[] vmBestPositions = p.bestPosition.get(i);
-            int[] vmPositions = p.position.get(i);
-            int[] vmGlobalBestPositions = globalBest.get(i);
-            
-            double[] newVelocities = new double[m];
+        for (int i = 0; i < numIterations; i++) {
+            for (int j = 0; j < numParticles; j++) {
+                /* Get current particle and attributes from swarm. */
+                Particle currentParticle = swarm.get(j);
+                // ArrayList<double[]> currentVelocity = currentParticle.velocity;
+                ArrayList<int[]> currentPosition = currentParticle.position;
 
-            for (int j = 0; j < vmVelocities.length - 1; j++) {
-                p.r1 = random.nextInt(2);
-                p.r2 = random.nextInt(2);
-                
-                if (assignedTasksArrayInVelocityMatrix[j] == 0) {
-                    /* Velocity vector. */
-                    newVelocities[j] = w * vmVelocities[j+1] + c1 * p.r1 * 
-                        (vmBestPositions[j] - vmPositions[j] + c2 * p.r2 * 
-                        (vmGlobalBestPositions[j] - vmPositions[j]));
+                /* Calculate inertia value. */
+                double w = calcInertia(j, averageFitnesses);
 
-                    /* Formula 4. */
-                    if (newVelocities[j] < 0) {
-                        newVelocities[j] = 0;
-                    }
-                    else if (newVelocities[j] > 1) {
-                        newVelocities[j] = 1;
-                    }
-                }
-                else {
-                    newVelocities[j] = 0;
-                }
+                /* Calculate new velocities. */
+                calcNewVelocities(w, currentParticle);
+
+                /* Calculate new positions. */
+                calcNewPositions(w, currentParticle);
+
+                /* Calculate the fitness.
+                 *
+                 * @TODO: Modify calcFitness() to return void and take the
+                 * particle as a parameter, updating the particle's fitness
+                 * within the method itself.
+                 */
+                double newFitness = calcFitness(runTime, currentPosition);
+                currentParticle.fitness = newFitness;
+
+                /* Evaluate the solution and update the current particle and
+                 * global bests if appropriate. */
+                evaluateSolution(newFitness, currentPosition, currentParticle);
+
+                /* Add the new fitness to the averageFitnesses array. */
+                double[] fitnessArray = averageFitnesses.get(j);
+                fitnessArray[i] = newFitness;
+                averageFitnesses.set(j, fitnessArray);
             }
 
-            /* Add new velocities to the ArrayList. */
-            newVelocitiesMatrix.add(newVelocities);
+            iteration++;
         }
 
-        /* Update the particle's velocity. */
-        p.velocity = newVelocitiesMatrix;
+        return getCloudletPositions(globalBest);
     }
 
-    /** 
+    /**
+     * Sigmoid function.
+     *
+     * @param x Parameter of type double.
+     */
+    private double s(double x) {
+        return 1 / (1 + Math.exp(-x));
+    }
+
+    /**
      * Set fixed inertia weight (FIW).
      *
      * @param fixedInertiaWeight The desired value.
@@ -648,13 +857,4 @@ public class BinaryPSO {
     private void setFixedInertiaWeight(double fixedInertiaWeight) {
         this.fixedInertiaWeight = fixedInertiaWeight;
     }
-	
-	/**
-	 * Sigmoid function.
-	 * 
-	 * @param x Parameter of type double.
-	 */
-	private double s(double x) {
-		return 1/(1 + Math.exp(-x));
-	}
 }
