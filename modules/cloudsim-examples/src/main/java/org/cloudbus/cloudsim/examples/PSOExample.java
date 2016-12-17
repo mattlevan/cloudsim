@@ -38,10 +38,10 @@ import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
 public class PSOExample {
 
 	/** The cloudlet list. */
-	private static List<Cloudlet> cloudletList;
+	protected static List<Cloudlet> cloudletList;
 
 	/** The vmlist. */
-	private static List<Vm> vmlist;
+	protected static List<Vm> vmlist;
 
 	/**
 	 * Creates main() to run this example.
@@ -134,7 +134,7 @@ public class PSOExample {
 		}
 	}
 
-	private static Datacenter createDatacenter(String name){
+	protected static Datacenter createDatacenter(String name) {
 
 		// Here are the steps needed to create a PowerDatacenter:
 		// 1. We need to create a list to store
@@ -217,7 +217,7 @@ public class PSOExample {
 
 	//We strongly encourage users to develop their own broker policies, to submit vms and cloudlets according
 	//to the specific rules of the simulated scenario
-	private static DatacenterBroker createBroker(){
+	protected static DatacenterBroker createBroker() {
 
 		DatacenterBroker broker = null;
 		try {
@@ -233,7 +233,7 @@ public class PSOExample {
 	 * Prints the Cloudlet objects
 	 * @param list  list of Cloudlets
 	 */
-	private static void printCloudletList(List<Cloudlet> list) {
+	protected static void printCloudletList(List<Cloudlet> list) {
 		int size = list.size();
 		Cloudlet cloudlet;
 

@@ -18,63 +18,51 @@ import java.util.*;
  * @author Amlan Chatterjee, Crosby Lanham, Matt Levan, Mishael Zerrudo
  */
 public class BinaryPSO {
-    /** Cognitive constant. */
-    private final double c1;
-
-    /** Social constant. */
-    private final double c2;
-
     /** Uniform rand number. */
     private final double r;
-
     /** Number of iterations. */
     private final int numIterations;
-
     /** Number of particles. */
     private final int numParticles;
-
     /** Inertia calculation technique choice. */
     private final int inertiaTechnique;
-
+    /**
+     * Cognitive constant.
+     */
+    protected double c1;
+    /**
+     * Social constant.
+     */
+    protected double c2;
+    /**
+     * Fixed inertia weight.
+     */
+    protected double fixedInertiaWeight = 0.5;
     /** List of Vms for submission to cloud resources. */
     private List<Vm> vmList;
-
     /** List of cloudlets for submission to cloud resources. */
     private List<Cloudlet> cloudletList;
-
     /**
      * Particle swarm for evaluating resources and finding a Vm
      * solution for each cloudlet.
      */
     private List<Particle> swarm;
-
     /** List of all possible solutions. */
     private List<ArrayList<ArrayList<Integer>>> solutions;
-
     /** Global best solution. */
     private ArrayList<int[]> globalBest;
-
     /** Average fitness matrix. */
     private ArrayList<double[]> averageFitnesses;
-
     /** Global best fitness. */
     private double globalBestFitness;
-
     /** Run times. */
     private ArrayList<double[]> runTime;
-
     /** Number of Vms. */
     private int n;
-
     /** Number of cloudlets. */
     private int m;
-
     /** Random Object. */
     private Random rand;
-
-    /** Fixed inertia weight. */
-    private double fixedInertiaWeight = 0.5;
-
     /** Solution counter for use in the calcSolutions method. */
     private int iteration = 0;
 
@@ -112,6 +100,7 @@ public class BinaryPSO {
         rand = new Random();
         r = rand.nextDouble(); // Initialize rand number.
     }
+
 
     /**
      * Fitness for a single PSO particle.
@@ -381,7 +370,6 @@ public class BinaryPSO {
                     newVelocities[j] = w * vmVelocities[j + 1] + c1 * p.r1 *
                             (vmBestPositions[j] - vmPositions[j] + c2 * p.r2 *
                                     (vmGlobalBestPositions[j] - vmPositions[j]));
-
                     /* Formula 4. */
                     if (newVelocities[j] < 0) {
                         newVelocities[j] = 0;
@@ -794,7 +782,7 @@ public class BinaryPSO {
      *
      * @return vmIds List of Vm ids to match cloudlets with.
      */
-    protected ArrayList<Integer> run() {
+    public ArrayList<Integer> run() {
         List<Integer> vmIds = new ArrayList<Integer>();
         /* Initialize swarm with numParticles particles. */
         initSwarm();
@@ -836,7 +824,6 @@ public class BinaryPSO {
 
             iteration++;
         }
-
         return getCloudletPositions(globalBest);
     }
 
